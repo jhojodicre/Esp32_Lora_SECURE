@@ -10,8 +10,8 @@
   //  NO tomar como referencia las etiquetas D1, D2,D3, ....Dx.
   
   //-2.1 Defflag_F_inicion de etiquetas para las Entradas.
-    #define in_Zona_1     4         // Entrada de Zona 1
-    #define in_Zona_2     10        // Entrada de Zona 2
+    #define in_Zona_1     32         // Entrada de Zona 1
+    #define in_Zona_2     33        // Entrada de Zona 2
     #define in_Zona_3     9         // Entrada de Zona 3
     #define in_PB_Aceptar 0         // Entrada de Pulsador in_PB_Aceptar 
   //-2.2 Defflag_F_inicion de etiquetas para las Salidas.
@@ -143,8 +143,8 @@ void setup(){
     //****************************
     //1.1 Configuracion de Salidas:
     //1.2 Configuracion de Entradas
-      // pinMode(in_Zona_1, INPUT_PULLUP);
-      // pinMode(in_Zona_2, INPUT_PULLUP);
+      pinMode(in_Zona_1, INPUT_PULLUP);
+      pinMode(in_Zona_2, INPUT_PULLUP);
       // pinMode(in_Zona_3, INPUT_PULLUP);
       // pinMode(in_PB_Aceptar, INPUT_PULLUP);
   //2. Condiciones Iniciales.
