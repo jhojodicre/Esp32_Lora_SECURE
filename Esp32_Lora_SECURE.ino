@@ -58,7 +58,7 @@
       byte      siguiente=2;         // Direccion del Nodo que sigue para enviar mensaje
       byte      Zonas=0;             // Estado de Zonas Activas.
       int       Nodos = 2;            // Establece Cuantos Nodos Conforman La Red a6.
-      
+      int       te_toca=1;
       //************************
       // String Compañeros="0";
       // String Nodo ="1";
@@ -132,6 +132,7 @@
     void ISR_temporizador_1(){
       if(flag_F_modo_Continuo){
         flag_F_responder=true;
+        ++te_toca;
       }
         actualTime = millis();
         flag_ISR_temporizador_1=true;
@@ -224,9 +225,25 @@ void loop(){
         }
         if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
           flag_ISR_temporizador_1=false;
-          a5_Nodo_Mensaje_ID();
-          b3();
-          RFM95_enviar(Nodo_info+letras+"R");
+          // a5_Nodo_Mensaje_ID();
+          // b3();
+          // RFM95_enviar(Nodo_info+letras+"R");
+          if(te_toca==1){
+            Serial.println("SEC,NOK,1,A");
+          }
+          if(te_toca==2){
+            Serial.println("SEC,NOK,2,B");
+          }
+          if(te_toca==3){
+            Serial.println("SEC,NOK,3,A");
+          }
+          if(te_toca==4){
+            Serial.println("SEC,NOK,3,B");
+          }
+          if(te_toca==5){
+            te_toca=0;
+            Serial.println("SEC,ALL,0,0");
+          }
         }
         if(localAddress==master){
           RFM95_enviar(letras);
