@@ -352,7 +352,7 @@ void loop(){
       int a=tipo_Modo;
       int b=tipo_Depurar;
       if(a==1){
-        beforeTime_1 = millis()
+        beforeTime_1 = millis();
         flag_F_modo_Continuo=true;
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
       }
@@ -641,7 +641,7 @@ void loop(){
       }
       if(sender==Nodo_anterior && recipient==localAddress){
         b2();
-        beforeTime_2 = miilis();
+        beforeTime_2 = millis();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_once){
           temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
