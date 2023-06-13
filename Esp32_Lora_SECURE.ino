@@ -76,10 +76,17 @@
       // unsigned long tiempo2;      
       //************************  
       long        initialTime= 0;
-      long        actualTime = 0;
-      long        elapseTime = 0;
-      long        afterTime  = 0;
-      long        beforeTime = 0;
+
+      long        actualTime_1 = 0;
+      long        elapseTime_1 = 0;
+      long        afterTime_1  = 0;
+      long        beforeTime_1 = 0;
+      
+      long        actualTime_2 = 0;
+      long        elapseTime_2 = 0;
+      long        afterTime_2  = 0;
+      long        beforeTime_2 = 0;
+
       long        baseTime   = 1000;
       long        answerTime = 7000;
       long        tokenTime  ;
@@ -148,7 +155,7 @@
       if(flag_F_modo_Continuo){
         flag_F_responder=true;
       }
-        actualTime = millis();
+        actualTime_1 = millis();
         flag_ISR_temporizador_1=true;
         flag_F_responder=true;
         // if(!flag_ISR_temporizador_2){
@@ -156,6 +163,7 @@
         // }
     }
     void ISR_temporizador_2(){
+      actualTime_2 = millis();
       flag_F_responder=true;
       flag_ISR_temporizador_2=true;
     }
@@ -177,14 +185,16 @@ void setup(){
     //-2.2 Valores y Espacios de Variables.
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
-      answerTime      = localAddress * 20;
-      tokenTime       = 10;
+      // Original para deployment
+      // answerTime      = localAddress * 20;
+      answerTime      = 6000;
+      tokenTime       = 2000;
+      updateTime      = 2500;
   //3. Configuracion de Perifericos:
     //-3.1 Comunicacion Serial:
       Serial.begin(9600);
       delay(10);
     //-3.2 Temporizador.
-      beforeTime = millis();
     //-3.2 Interrupciones Habilitadas.
       //****************************
       attachInterrupt (digitalPinToInterrupt (in_PB_Aceptar), ISR_0, FALLING);  // attach interrupt handler for D2
@@ -229,15 +239,23 @@ void loop(){
       // flag_ISR_prueba=false;
       // a1_Nodo_Destellos(1,3);
     }
-  // if(flag_ISR_temporizador_1){
-  //   elapseTime = actualTime - beforeTime;
-  //   Serial.println(elapseTime);
-  //   // Serial.println(actualTime);
-  //   // Serial.println(beforeTime);
-  //   beforeTime = actualTime;
-  //   // flag_ISR_temporizador_1=false;
-  // }
-    if(flag_F_updateServer){
+  if(flag_ISR_temporizador_1){
+    elapseTime_1 = actualTime_1 - beforeTime_1;
+    Serial.println(elapseTime_1);
+    // Serial.println(actualTime_1);
+    // Serial.println(beforeTime_1);
+    beforeTime_1 = actualTime_1;
+    // flag_ISR_temporizador_1=false;
+  }
+  if(flag_ISR_temporizador_2){
+    elapseTime_2 = actualTime_2 - beforeTime_2;
+    Serial.println(elapseTime_2);
+    // Serial.println(actualTime_1);
+    // Serial.println(beforeTime_1);
+    beforeTime_2 = actualTime_2;
+    // flag_ISR_temporizador_1=false;
+  }
+  if(flag_F_updateServer){
       serverUpdate();
     }
   //5. RFM95 Funciones.
@@ -334,6 +352,7 @@ void loop(){
       int a=tipo_Modo;
       int b=tipo_Depurar;
       if(a==1){
+        beforeTime_1 = millis()
         flag_F_modo_Continuo=true;
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
       }
@@ -622,6 +641,7 @@ void loop(){
       }
       if(sender==Nodo_anterior && recipient==localAddress){
         b2();
+        beforeTime_2 = miilis();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_once){
           temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
@@ -637,10 +657,12 @@ void loop(){
       if(sender==master && recipient==254){
         temporizador_2.once_ms(answerTime,ISR_temporizador_2);
       }
+      // Modo Prueba
       if(flag_F_modo_Continuo   && flag_ISR_temporizador_1){
           a5_Nodo_Mensaje_ID();
           b3();
       }
+      // Modo Maestro.
       if(localAddress==master){
           flag_F_responder=true;
       }
