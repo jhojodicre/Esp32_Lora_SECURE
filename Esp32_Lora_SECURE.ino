@@ -185,9 +185,9 @@ void setup(){
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
     //-2.2 Valores y Espacios de Variables.
+      Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
-      Nodo_actual     = localAddress;
       // Original para deployment
       // answerTime      = localAddress * 20;
       answerTime      = 6000;
@@ -330,7 +330,8 @@ void loop(){
     }
     void a3_Nodo_Direccion_Local(int paramatro_1){
       Serial.println("Ejecutando F3.. \n");
-      localAddress = paramatro_1;
+      localAddress    = paramatro_1;
+      Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
       // answerTime      = localAddress * 20;
