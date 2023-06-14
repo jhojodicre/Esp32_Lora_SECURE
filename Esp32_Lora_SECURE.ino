@@ -652,8 +652,8 @@ void loop(){
           flag_F_once=false;
         }
       }
-      if(sender!=master && sender!=Nodo_anterior && recipient==localAddress){
-        b2();
+      if(sender!=Nodo_anterior && recipient==localAddress){
+        b1();
         beforeTime_2 = millis();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_once){
