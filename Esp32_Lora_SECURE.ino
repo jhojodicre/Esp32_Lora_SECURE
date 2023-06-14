@@ -652,6 +652,15 @@ void loop(){
           flag_F_once=false;
         }
       }
+      if(sender!=master && sender!=Nodo_anterior && recipient==localAddress){
+        b2();
+        beforeTime_2 = millis();
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+        if(flag_F_once){
+          temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
+          flag_F_once=false;
+        }
+      }
       // Broadcast.
       if(sender==master && recipient==0){
         b4();
