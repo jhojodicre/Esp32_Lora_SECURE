@@ -396,7 +396,7 @@ void loop(){
       Nodo_info=String(nodo_informa, HEX);
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
-
+      letras="R";
     }
     void b2 (){
       // 1. Destinatario.
@@ -469,9 +469,23 @@ void loop(){
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
       letras="OK";
     }
-    void b6 (int a1, int a2){
-      int aa=a1;
-      int aa2=a2;
+    void b6 (){
+      // Informacion Acerca de los nodos que pude LEER.
+      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+      destination=Nodo_siguiente;                           // Respondo a quien me escribe.
+      // 2. Remitente.
+      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+      // 3. Nodos Leidos 1.
+      msg1_Write=msgNumber;                            // ANTERIORMENTE incomingMsgId1;
+      // 4. Nodos Leidos 2.
+      msg2_Write=incomingMsgId2;
+      // 5. Longitud de Bytes de la Cadena incoming
+        // Este byte lo escribe antes de Enviar el mensaje
+      // 6. Este byte contiene Informacion del Nodo
+      // Nodo_info=String(msgNumber, HEX);
+      // 7. Byte Escrito desde recepcion Serial o Predefinido.
+      // 7. Byte Escrito desde recepcion Serial o Predefinido.
+      letras="Q";   //Question solicitd.
     }
     void b7 (int a1, int a2){
       int aa=a1;
@@ -600,7 +614,7 @@ void loop(){
       }
       if (funtion_Mode=="B" && funtion_Number=="6"){
         Serial.println("funion B Nº6");
-        b6(1,1);
+        b6();
       }        
       if (funtion_Mode=="B" && funtion_Number=="7"){
         Serial.println("funion B Nº7");
@@ -644,7 +658,7 @@ void loop(){
         b3();
       }
       if(sender==Nodo_anterior && recipient==localAddress){
-        b2();
+        b6();
         beforeTime_2 = millis();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_once){
