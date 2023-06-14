@@ -57,7 +57,7 @@
     bool          flag_F_updateServer=false;
     bool          flag_F_respondido=false;
     bool          flag_F_masteRequest=false;
-    
+    bool          flag_F_nodoRequest=false;
 // Variables para Logica interna
       String      Nodo_info="";
       String      letras="";
@@ -65,6 +65,7 @@
       byte        master=0xFF;
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
       byte        Nodo_anterior;
+      byte        Nodo_actual=0;
       byte        Zonas=0;             // Estado de Zonas Activas.
       int         Nodos = 2;           // Establece Cuantos Nodos Conforman La Red a6.
       int         te_toca=1;           // Prueba para comunicacion continua con el servidor.
@@ -186,6 +187,7 @@ void setup(){
     //-2.2 Valores y Espacios de Variables.
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
+      Nodo_actual     = localAddress;
       // Original para deployment
       // answerTime      = localAddress * 20;
       answerTime      = 6000;
@@ -571,7 +573,7 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="0"){
         Serial.println("funion A Nº0");
-        RFM95_enviar("Maestro");
+        flag_F_nodoRequest=true;
       }
     // Function Tipo B
       //
@@ -667,6 +669,9 @@ void loop(){
       if(localAddress==master && flag_F_masteRequest){
           flag_F_responder=true;
       }
+      if(localAddress==Nodo_actual && flag_F_nodoRequest){
+        flag_F_responder=true;
+      }
     }
     void serverUpdate(){
       flag_ISR_temporizador_3=false;
@@ -748,6 +753,7 @@ void loop(){
       flag_ISR_temporizador_1=false;
       flag_F_respondido=true;
       flag_F_masteRequest=false;
+      flag_F_nodoRequest=false;
 
       sender=0;
       recipient=0;
