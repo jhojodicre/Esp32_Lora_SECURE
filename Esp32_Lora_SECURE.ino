@@ -34,7 +34,7 @@
     volatile bool flag_ISR_temporizador_1=false;
     volatile bool flag_ISR_temporizador_2=false;
     volatile bool flag_ISR_temporizador_3=false;        // pra actualizar los dato al servidor.
-
+    
   //-3.2 Variables Globales para Las Funciones.
     //********************************************************
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
@@ -58,6 +58,7 @@
     bool          flag_F_respondido=false;
     bool          flag_F_masteRequest=false;
     bool          flag_F_nodoRequest=false;
+    bool          flag_F_Nodo_iniciado=false;       // Status
 // Variables para Logica interna
       String      Nodo_info="";
       String      letras="";
@@ -663,15 +664,6 @@ void loop(){
       }
       if(sender==Nodo_anterior && recipient==localAddress){
         b6();
-        beforeTime_2 = millis();
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        if(flag_F_once){
-          temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-          flag_F_once=false;
-        }
-      }
-      if(sender!=Nodo_anterior && recipient==localAddress){
-        b1();
         beforeTime_2 = millis();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_once){
