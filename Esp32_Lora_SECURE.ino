@@ -56,6 +56,7 @@
     bool          flag_F_once=true;
     bool          flag_F_updateServer=false;
     bool          flag_F_respondido=false;
+    bool          flag_F_masteRequest=false;
     
 // Variables para Logica interna
       String      Nodo_info="";
@@ -564,7 +565,7 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="9"){
         Serial.println("funion A Nº9");
-        flag_F_responder=true;
+        flag_F_masteRequest=true;
         letras=inputString.substring(2);
         // Serial.println(letras);
       }
@@ -658,12 +659,12 @@ void loop(){
         temporizador_2.once_ms(answerTime,ISR_temporizador_2);
       }
       // Modo Prueba
-      if(flag_F_modo_Continuo   && flag_ISR_temporizador_1){
+      if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
           a5_Nodo_Mensaje_ID();
           b3();
       }
       // Modo Maestro.
-      if(localAddress==master){
+      if(localAddress==master && flag_F_masteRequest){
           flag_F_responder=true;
       }
     }
@@ -746,6 +747,7 @@ void loop(){
       flag_ISR_temporizador_2=false;        // se habilita en el ISR del temporiador 2
       flag_ISR_temporizador_1=false;
       flag_F_respondido=true;
+      flag_F_masteRequest=false;
     }
     // Arregalr el mensaje que se envia en la cadena letras, que sea de 3 letras mas la R al final    
     // Mejorar el mensaje de las entradas digitales, 
