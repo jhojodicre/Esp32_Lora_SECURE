@@ -649,16 +649,16 @@ void loop(){
           flag_F_once=false;
         }
       }
-      // Broadcast
+      // Broadcast.
       if(sender==master && recipient==0){
         b4();
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
       }
-      // si el master quiere saber: a quien puede escuchar
+      // si el master quiere saber: a quien puede escuchar.
       if(sender==master && recipient==254){
         temporizador_2.once_ms(answerTime,ISR_temporizador_2);
       }
-      // Modo Prueba
+      // Modo Prueba.
       if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
           a5_Nodo_Mensaje_ID();
           b3();
@@ -748,6 +748,9 @@ void loop(){
       flag_ISR_temporizador_1=false;
       flag_F_respondido=true;
       flag_F_masteRequest=false;
+
+      sender=0;
+      recipient=0;
     }
     // Arregalr el mensaje que se envia en la cadena letras, que sea de 3 letras mas la R al final    
     // Mejorar el mensaje de las entradas digitales, 
