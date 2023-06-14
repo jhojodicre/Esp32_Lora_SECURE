@@ -335,7 +335,11 @@ void loop(){
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
       // answerTime      = localAddress * 20;
-
+      if(localAddress==master){
+        temporizador_1.detach();
+        temporizador_2.detach();
+        temporizador_3.detach();
+      }
       Serial.print("Drireccion Local: ");
       Serial.println(localAddress);
     }
