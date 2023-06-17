@@ -19,7 +19,24 @@
     //********************************************************
     #define LED_azul      2
 
-  //-2.3 RFM95 Modulo de comunicacion
+  //-2.3 ZONAS
+    #define P1ZA          0
+    #define P1ZB          1
+    #define P2ZA          2
+    #define P2ZB          3
+    #define P3ZA          4
+    #define P3ZB          5
+    #define P4ZA          6
+    #define P4ZB          7
+
+    #define P5ZA          0
+    #define P5ZB          1
+    #define P6ZA          2
+    #define P6ZB          3
+    #define P7ZA          4
+    #define P7ZB          5
+    #define P8ZA          6
+    #define P8ZB          7
 
   //-2.4. Constantes
     //********************************************************
@@ -275,6 +292,7 @@ void loop(){
       }
     //-5.2 RFM95 RECIBIR.
       RFM95_recibir(LoRa.parsePacket());
+      serverUpdate();
       secuencia();
 }
 //1. Funciones de Logic interna del Micro.
@@ -703,22 +721,46 @@ void loop(){
       }
     }
     void serverUpdate(){
-      flag_ISR_temporizador_3=false;
-      if(te_toca==1){
+      // flag_ISR_temporizador_3=false;
+      // if(te_toca==1){
+      //   Serial.println("SEC,NOK,1,A");
+      // }
+      // if(te_toca==2){
+      //   Serial.println("SEC,NOK,2,B");
+      // }
+      // if(te_toca==3){
+      //   Serial.println("SEC,NOK,3,A");
+      // }
+      // if(te_toca==4){
+      //   Serial.println("SEC,NOK,3,B");
+      // }
+      // if(te_toca==5){
+      //   te_toca=0;
+      //   Serial.println("SEC,ALL,0,0");
+      // }
+      if(bitRead(incomingMsgId1, P1ZA)){
         Serial.println("SEC,NOK,1,A");
       }
-      if(te_toca==2){
+      if(bitRead(incomingMsgId1, P1ZB)){
+        Serial.println("SEC,NOK,1,B");
+      }
+      if(bitRead(incomingMsgId1, P2ZA)){
+        Serial.println("SEC,NOK,2,A");
+      }
+      if(bitRead(incomingMsgId1, P2ZB)){
         Serial.println("SEC,NOK,2,B");
       }
-      if(te_toca==3){
+      if(bitRead(incomingMsgId1, P3ZA)){
         Serial.println("SEC,NOK,3,A");
       }
-      if(te_toca==4){
+      if(bitRead(incomingMsgId1, P3ZB)){
         Serial.println("SEC,NOK,3,B");
       }
-      if(te_toca==5){
-        te_toca=0;
-        Serial.println("SEC,ALL,0,0");
+      if(bitRead(incomingMsgId1, P4ZA)){
+        Serial.println("SEC,NOK,4,A");
+      }
+      if(bitRead(incomingMsgId1, P4ZB)){
+        Serial.println("SEC,NOK,4,B");
       }
     }
 //5. Funciones de Dispositivos Externos.
