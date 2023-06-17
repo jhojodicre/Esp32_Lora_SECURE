@@ -401,9 +401,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte;
+      msg1_Write=lowByte(Zonas);
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte;
+      msg2_Write=highByte(Zonas);
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
@@ -418,9 +418,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte;
+      msg1_Write=lowByte(Zonas);
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte;
+      msg2_Write=highByte(Zonas);
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
@@ -434,9 +434,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte;
+      msg2_Write=highByte(Zonas);
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -453,9 +453,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte;
+      msg2_Write=highByte(Zonas);
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -472,9 +472,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte;
+      msg2_Write=highByte(Zonas);
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -490,9 +490,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte;
+      msg2_Write=highByte(Zonas);
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
