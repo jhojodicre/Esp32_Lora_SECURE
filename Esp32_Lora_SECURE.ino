@@ -750,10 +750,10 @@ void loop(){
       if(bitRead(incomingMsgId1, P1ZB)){
         Serial.println("SEC,NOK,1,B");
       }
-      if(!bitRead(incomingMsgId1, P4ZA)){
+      if(!bitRead(incomingMsgId1, P1ZA)){
         Serial.println("SEC,BOK,1,A");
       }
-      if(!bitRead(incomingMsgId1, P4ZB)){
+      if(!bitRead(incomingMsgId1, P1ZB)){
         Serial.println("SEC,BOK,1,B");
       }
 
@@ -764,11 +764,11 @@ void loop(){
       if(bitRead(incomingMsgId1, P2ZB)){
         Serial.println("SEC,NOK,2,B");
       }
-      if(!bitRead(incomingMsgId1, P4ZA)){
-        Serial.println("SEC,BOK,3,A");
+      if(!bitRead(incomingMsgId1, P2ZA)){
+        Serial.println("SEC,BOK,2,A");
       }
-      if(!bitRead(incomingMsgId1, P4ZB)){
-        Serial.println("SEC,BOK,3,B");
+      if(!bitRead(incomingMsgId1, P2ZB)){
+        Serial.println("SEC,BOK,2,B");
       }
 
 
@@ -778,10 +778,10 @@ void loop(){
       if(bitRead(incomingMsgId1, P3ZB)){
         Serial.println("SEC,NOK,3,B");
       }
-      if(!bitRead(incomingMsgId1, P4ZA)){
+      if(!bitRead(incomingMsgId1, P3ZA)){
         Serial.println("SEC,BOK,3,A");
       }
-      if(!bitRead(incomingMsgId1, P4ZB)){
+      if(!bitRead(incomingMsgId1, P3ZB)){
         Serial.println("SEC,BOK,3,B");
       }
 
