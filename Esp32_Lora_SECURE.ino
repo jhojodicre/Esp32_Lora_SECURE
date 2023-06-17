@@ -59,24 +59,28 @@
     bool          flag_F_masteRequest=false;
     bool          flag_F_nodoRequest=false;
     bool          flag_F_Nodo_iniciado=false;       // Status
-// Variables para Logica interna
-      String      Nodo_info="";
-      String      letras="";
-      String      info_1="";
+// Variables para Logica interna.
+
       byte        master=0xFF;
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
       byte        Nodo_anterior;
       byte        Nodo_actual=0;
-      byte        Zonas=0;             // Estado de Zonas Activas.
+      word        Zonas=0;             // Estado de Zonas Activas.
       int         Nodos = 2;           // Establece Cuantos Nodos Conforman La Red a6.
-      int         te_toca=1;           // Prueba para comunicacion continua con el servidor.
+      int         Zona_A;
+      int         Zona_B;
+
       //************************
       // String Compañeros="0";
       // String Nodo ="1";
       // String Nodo_cercano=""; // Guardo la direccion del Nodo que escribe
       // bool Nodo_Reconocido=0;
       // unsigned long tiempo1;
-      // unsigned long tiempo2;      
+      // unsigned long tiempo2;
+      String      Nodo_info="";
+      String      letras="";
+      String      info_1="";
+      int         te_toca=1;           // Prueba para comunicacion continua con el servidor.      
       //************************  
       long        initialTime= 0;
 
@@ -145,10 +149,10 @@
       Zonas=0;
     }
     ICACHE_RAM_ATTR void ISR_1(){
-      bitSet(Zonas, 0);
+      bitSet(Zonas, Zona_A);
     }
     ICACHE_RAM_ATTR void ISR_2(){
-      bitSet(Zonas, 1);
+      bitSet(Zonas, Zona_B);
     }
     ICACHE_RAM_ATTR void ISR_3(){
       flag_ISR_prueba=true;
@@ -189,6 +193,8 @@ void setup(){
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
+      Zona_B          = localAddress + (localAddress - 1);
+      Zona_A          = Zona_B - 1;
       // Original para deployment
       // answerTime      = localAddress * 20;
       answerTime      = 6000;
@@ -335,6 +341,9 @@ void loop(){
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
+
+      Zona_B          = localAddress + (localAddress - 1);
+      Zona_A          = Zona_B - 1;
       // answerTime      = localAddress * 20;
       if(localAddress==master){
         temporizador_1.detach();
@@ -392,9 +401,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=incomingMsgId1;
+      msg1_Write=lowByte;
       // 4. Nodos Leidos 2.
-      msg2_Write=incomingMsgId2;
+      msg2_Write=highByte;
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
@@ -409,9 +418,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=incomingMsgId1;
+      msg1_Write=lowByte;
       // 4. Nodos Leidos 2.
-      msg2_Write=incomingMsgId2;
+      msg2_Write=highByte;
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
@@ -425,9 +434,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=msgNumber;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=incomingMsgId2;
+      msg2_Write=highByte;
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -444,9 +453,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=msgNumber;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=incomingMsgId2;
+      msg2_Write=highByte;
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -463,9 +472,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=msgNumber;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=incomingMsgId2;
+      msg2_Write=highByte;
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -481,9 +490,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=msgNumber;                            // ANTERIORMENTE incomingMsgId1;
+      msg1_Write=lowByte;                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
-      msg2_Write=incomingMsgId2;
+      msg2_Write=highByte;
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
