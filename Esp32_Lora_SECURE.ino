@@ -76,6 +76,7 @@
     bool          flag_F_masteRequest=false;
     bool          flag_F_nodoRequest=false;
     bool          flag_F_Nodo_iniciado=false;       // Status
+    bool          flag_F_PAQUETE=false;
 // Variables para Logica interna.
 
       byte        master=0xFF;
@@ -292,7 +293,11 @@ void loop(){
       }
     //-5.2 RFM95 RECIBIR.
       RFM95_recibir(LoRa.parsePacket());
-      serverUpdate();
+      if(flag_F_PAQUETE){
+        flag_F_PAQUETE=false;
+        serverUpdate();
+      }
+      
       secuencia();
 }
 //1. Funciones de Logic interna del Micro.
@@ -802,7 +807,7 @@ void loop(){
       
       inputString=incoming;
       falg_ISR_stringComplete=true;
-      
+      flag_F_PAQUETE=true;
       if(inputString.endsWith("R")){
         flag_F_responder=false;
       }
