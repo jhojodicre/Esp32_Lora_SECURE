@@ -715,7 +715,8 @@ void loop(){
       // Modo Prueba.
       if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
           a5_Nodo_Mensaje_ID();
-          b3();
+          // b3();
+          flag_F_responder=true;
       }
       // Modo Maestro.
       if(localAddress==master && flag_F_masteRequest){
@@ -749,24 +750,55 @@ void loop(){
       if(bitRead(incomingMsgId1, P1ZB)){
         Serial.println("SEC,NOK,1,B");
       }
+      if(!bitRead(incomingMsgId1, P4ZA)){
+        Serial.println("SEC,BOK,1,A");
+      }
+      if(!bitRead(incomingMsgId1, P4ZB)){
+        Serial.println("SEC,BOK,1,B");
+      }
+
+
       if(bitRead(incomingMsgId1, P2ZA)){
         Serial.println("SEC,NOK,2,A");
       }
       if(bitRead(incomingMsgId1, P2ZB)){
         Serial.println("SEC,NOK,2,B");
       }
+      if(!bitRead(incomingMsgId1, P4ZA)){
+        Serial.println("SEC,BOK,3,A");
+      }
+      if(!bitRead(incomingMsgId1, P4ZB)){
+        Serial.println("SEC,BOK,3,B");
+      }
+
+
       if(bitRead(incomingMsgId1, P3ZA)){
         Serial.println("SEC,NOK,3,A");
       }
       if(bitRead(incomingMsgId1, P3ZB)){
         Serial.println("SEC,NOK,3,B");
       }
+      if(!bitRead(incomingMsgId1, P4ZA)){
+        Serial.println("SEC,BOK,3,A");
+      }
+      if(!bitRead(incomingMsgId1, P4ZB)){
+        Serial.println("SEC,BOK,3,B");
+      }
+
+
       if(bitRead(incomingMsgId1, P4ZA)){
         Serial.println("SEC,NOK,4,A");
       }
       if(bitRead(incomingMsgId1, P4ZB)){
         Serial.println("SEC,NOK,4,B");
       }
+      if(!bitRead(incomingMsgId1, P4ZA)){
+        Serial.println("SEC,BOK,4,A");
+      }
+      if(!bitRead(incomingMsgId1, P4ZB)){
+        Serial.println("SEC,BOK,4,B");
+      }
+      
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
