@@ -299,8 +299,9 @@ void loop(){
       if(flag_F_PAQUETE){
         flag_F_PAQUETE=false;
         serverUpdate();
+        secuencia();
       }
-      secuencia();
+      
 }
 //1. Funciones de Logic interna del Micro.
   void welcome(){
@@ -635,11 +636,13 @@ void loop(){
         Serial.println("funion A Nº9");
         flag_F_masteRequest=true;
         letras=inputString.substring(2);
+        secuencia();
         // Serial.println(letras);
       }
       if (funtion_Mode=="A" && funtion_Number=="0"){
         Serial.println("funion A Nº0");
         flag_F_nodoRequest=true;
+        secuencia()
       }
     // Function Tipo B
       //
@@ -722,9 +725,10 @@ void loop(){
       // Broadcast.
       if(sender==master && recipient==0 && flag_F_Nodo_iniciado==false){
         b6();
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+        beforeTime_1 = millis();  // despurar.
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-        // Serial.println("iniciado");
-        flag_F_Nodo_iniciado=true;
       }
       // si el master quiere saber: a quien puede escuchar.
       if(sender==master && recipient==254){
@@ -732,18 +736,20 @@ void loop(){
       }
       // Modo Maestro.
       if(localAddress==master && flag_F_masteRequest){
-          b2();
-          flag_F_responder=true;
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
       // Modo Prueba.
       if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
-          a5_Nodo_Mensaje_ID();
           // b3();
-          flag_F_responder=true;
+          // a5_Nodo_Mensaje_ID();
+          // flag_F_responder=true;
       }
       // Modo Esclavo
       if(localAddress==Nodo_actual && flag_F_nodoRequest){
-        flag_F_responder=true;
+        b6();
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
       // if(flag_F_answerTime){
       //   b6();
