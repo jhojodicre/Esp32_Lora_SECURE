@@ -347,7 +347,9 @@ void loop(){
       // FUNCION PROBADA CORRECTAMENTE
       int veces=repeticiones;
       int retardo=tiempo*100;
-      Serial.println("Ejecutando F1.. \n");
+      if(flag_depurar){
+        Serial.println("Ejecutando F1.. \n");
+      }
       for(int repetir=0; repetir<veces; ++repetir){
         delay(retardo);                  // pausa 1 seg.
         digitalWrite(LED_azul, LOW);     // Led ON.
@@ -361,7 +363,9 @@ void loop(){
       Serial.println("letras:" + letras);         // Pureba de Comunicacion Serial.
     }
     void a3_Nodo_Direccion_Local(int paramatro_1){
-      Serial.println("Ejecutando F3.. \n");
+      if(flag_depurar){
+        Serial.println("Ejecutando F3.. \n");
+      }
       localAddress    = paramatro_1;
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
@@ -375,7 +379,7 @@ void loop(){
         temporizador_2.detach();
         temporizador_3.detach();
       }
-      Serial.print("Drireccion Local: ");
+      Serial.print("Address Local: ");
       Serial.println(localAddress);
     }
     void a4_Nodo_Direccion_Destino(int direccion_aux){
@@ -564,7 +568,10 @@ void loop(){
       x3=funtion_Parmeter3.toInt();
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
-        Serial.println("funion A Nº001");
+        if(flag_depurar){
+          Serial.println("funion A Nº001");
+        }
+        
         a1_Nodo_Destellos(x1,x2);
       }
       if (funtion_Mode=="A" && funtion_Number=="2"){
@@ -573,7 +580,9 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="3"){
         // FUNCIONO A MEDIAS SOLO DIRECIONES BAJAS Y 255 falta acomodar un poco mas
-        Serial.println("funion A Nº3");
+        if(flag_depurar){
+          Serial.println("funion A Nº3");
+        }
         String Nodo_direccion_aux = "";
         Nodo_direccion_aux = funtion_Parmeter1 + funtion_Parmeter2 + funtion_Parmeter3;
         //Serial.println(Nodo_direccion_aux);
@@ -679,7 +688,9 @@ void loop(){
         c1(x2);
       }
       else{
-      Serial.println("Ninguna Funcion");
+        if(flag_depurar){
+        Serial.println("Ninguna Funcion");
+        }
       }
       
   }
