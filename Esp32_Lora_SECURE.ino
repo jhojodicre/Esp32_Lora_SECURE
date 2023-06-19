@@ -830,7 +830,7 @@ void loop(){
       if (recipient != localAddress && recipient != 0xFF) {
         Serial.println("Sent to: 0x" + String(recipient, HEX));
         Serial.println("This message is not for me.");
-        return;                             // skip rest of function
+        // return;                             // skip rest of function
       }
       // if message is for this device, or broadcast, print details:
       if(flag_depurar){
@@ -876,7 +876,7 @@ void loop(){
       recipient=0;
 
 
-      
+
     }
     // Arregalr el mensaje que se envia en la cadena letras, que sea de 3 letras mas la R al final    
     // Mejorar el mensaje de las entradas digitales, 
