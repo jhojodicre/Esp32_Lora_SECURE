@@ -271,8 +271,7 @@ void loop(){
     Serial.print("BT1: ");
     Serial.println(beforeTime_1);
     beforeTime_1 = currentTime_1;
-
-    flag_F_answerTime=true;
+    flag_F_responder=true;
   }
   if(flag_ISR_temporizador_2){
     elapseTime_2 = currentTime_2 - beforeTime_2;
@@ -301,7 +300,6 @@ void loop(){
         flag_F_PAQUETE=false;
         serverUpdate();
       }
-      
       secuencia();
 }
 //1. Funciones de Logic interna del Micro.
@@ -733,10 +731,10 @@ void loop(){
       if(localAddress==Nodo_actual && flag_F_nodoRequest){
         flag_F_responder=true;
       }
-      if(flag_F_answerTime){
-        b6();
-        flag_F_responder=true;
-      }
+      // if(flag_F_answerTime){
+      //   b6();
+      //   flag_F_responder=true;
+      // }
 
     }
     void serverUpdate(){
