@@ -77,6 +77,8 @@
     bool          flag_F_nodoRequest=false;
     bool          flag_F_Nodo_iniciado=false;       // Status
     bool          flag_F_PAQUETE=false;
+    bool          flag_F_tokenTime=false;
+    bool          flag_F_answerTime=false;
 // Variables para Logica interna.
 
       byte        master=0xFF;
@@ -102,18 +104,18 @@
       //************************  
       long        initialTime= 0;
 
-      long        actualTime_1 = 0;
+      long        currentTime_1 = 0;
       long        elapseTime_1 = 0;
       long        afterTime_1  = 0;
       long        beforeTime_1 = 0;
       
-      long        actualTime_2 = 0;
+      long        currentTime_2 = 0;
       long        elapseTime_2 = 0;
       long        afterTime_2  = 0;
       long        beforeTime_2 = 0;
 
       long        baseTime   = 1000;
-      long        answerTime = 7000;
+      long        answerTime = 1000;
       long        tokenTime  ;
       long        updateTime = 2000;
     // Alarmas
@@ -142,9 +144,10 @@
 
 //4. Intancias.
   //********************************************************
-  Ticker temporizador_1;
-  Ticker temporizador_2;
-  Ticker temporizador_3;
+  Ticker temporizador_1;                // Tiempo de respuesta
+  Ticker temporizador_2;                // Tiempo token.
+  Ticker temporizador_3;                // Tiempo update Server.
+  Ticker temporizador_4;                // Tiempo de respuesta de todas las placas.
 //5. Funciones ISR.
   //-5.1 Serial Function.
     void serialEvent (){
@@ -177,19 +180,11 @@
     }
     // -5.3 Interrupciones por Timer 1.
     void ISR_temporizador_1(){
-      if(flag_F_modo_Continuo){
-        flag_F_responder=true;
-      }
-        actualTime_1 = millis();
+        currentTime_1 = millis();
         flag_ISR_temporizador_1=true;
-        flag_F_responder=true;
-        // if(!flag_ISR_temporizador_2){
-        //   flag_F_responder=true;
-        // }
     }
     void ISR_temporizador_2(){
-      actualTime_2 = millis();
-      flag_F_responder=true;
+      currentTime_2 = millis();
       flag_ISR_temporizador_2=true;
     }
     void ISR_temporizador_3(){
@@ -216,7 +211,7 @@ void setup(){
       // Original para deployment
       // answerTime      = localAddress * 20;
       answerTime      = 6000;
-      tokenTime       = 2000;
+      tokenTime       = 2500;
       updateTime      = 2500;
   //3. Configuracion de Perifericos:
     //-3.1 Comunicacion Serial:
@@ -268,20 +263,23 @@ void loop(){
       // a1_Nodo_Destellos(1,3);
     }
   if(flag_ISR_temporizador_1){
-    elapseTime_1 = actualTime_1 - beforeTime_1;
-    Serial.println(elapseTime_1);
-    // Serial.println(actualTime_1);
-    // Serial.println(beforeTime_1);
-    beforeTime_1 = actualTime_1;
-    // flag_ISR_temporizador_1=false;
+    elapseTime_1 = currentTime_1 - beforeTime_1;
+    Serial.println("ET1: " + elapseTime_1);
+    Serial.println("CT1: " + currentTime_1);
+    Serial.println("BT1: " + beforeTime_1);
+    beforeTime_1 = currentTime_1;
+
+    flag_F_answerTime=true;
   }
   if(flag_ISR_temporizador_2){
-    elapseTime_2 = actualTime_2 - beforeTime_2;
-    Serial.println(elapseTime_2);
-    // Serial.println(actualTime_1);
-    // Serial.println(beforeTime_1);
-    beforeTime_2 = actualTime_2;
-    // flag_ISR_temporizador_1=false;
+    elapseTime_2 = currentTime_2 - beforeTime_2;
+    Serial.println("ET2: " + elapseTime_2);
+    Serial.println("CT2: " + currentTime_2);
+    Serial.println("BT2: " + beforeTime_2);
+    beforeTime_2 = currentTime_2;
+  
+    flag_F_tokenTime=true;
+    flag_F_responder=true;
   }
   if(flag_F_updateServer){
       serverUpdate();
@@ -689,19 +687,19 @@ void loop(){
       }
     }
     void secuencia(){
+
+      if(sender==Nodo_anterior && recipient==localAddress){
+        b6();
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+        beforeTime_1 = millis();  // despurar.
+        temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
+          
+      }
       // Solo se cumple si es el Primer Nodo.
       if(sender==master && recipient==localAddress){
         flag_F_responder=true;
         b3();
-      }
-      if(sender==Nodo_anterior && recipient==localAddress){
-        b6();
-        beforeTime_2 = millis();
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        if(flag_F_once){
-          temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-          flag_F_once=false;
-        }
       }
       // Broadcast.
       if(sender==master && recipient==0){
@@ -712,19 +710,25 @@ void loop(){
       if(sender==master && recipient==254){
         temporizador_2.once_ms(answerTime,ISR_temporizador_2);
       }
+      // Modo Maestro.
+      if(localAddress==master && flag_F_masteRequest){
+          flag_F_responder=true;
+      }
       // Modo Prueba.
       if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
           a5_Nodo_Mensaje_ID();
           // b3();
           flag_F_responder=true;
       }
-      // Modo Maestro.
-      if(localAddress==master && flag_F_masteRequest){
-          flag_F_responder=true;
-      }
+      // Modo Esclavo
       if(localAddress==Nodo_actual && flag_F_nodoRequest){
         flag_F_responder=true;
       }
+      if(flag_F_answerTime){
+        b6();
+        flag_F_responder=true;
+      }
+
     }
     void serverUpdate(){
       // flag_ISR_temporizador_3=false;
@@ -744,6 +748,10 @@ void loop(){
       //   te_toca=0;
       //   Serial.println("SEC,ALL,0,0");
       // }
+      if(incomingMsgId1==0){
+        Serial.println("SEC,ALL,0,0");
+        return;
+      }
       if(bitRead(incomingMsgId1, P1ZA)){
         Serial.println("SEC,NOK,1,A");
       }
@@ -862,7 +870,8 @@ void loop(){
       flag_F_respondido=true;
       flag_F_masteRequest=false;
       flag_F_nodoRequest=false;
-
+      flag_F_tokenTime=false;
+      flag_F_answerTime=false;
       sender=0;
       recipient=0;
     }
