@@ -265,8 +265,11 @@ void loop(){
   if(flag_ISR_temporizador_1){
     elapseTime_1 = currentTime_1 - beforeTime_1;
     Serial.println("ET1: " + elapseTime_1);
+    Serial.println(elapseTime_1);
     Serial.println("CT1: " + currentTime_1);
+    Serial.println(currentTime_1);
     Serial.println("BT1: " + beforeTime_1);
+    Serial.println(beforeTime_1);
     beforeTime_1 = currentTime_1;
 
     flag_F_answerTime=true;
@@ -274,8 +277,11 @@ void loop(){
   if(flag_ISR_temporizador_2){
     elapseTime_2 = currentTime_2 - beforeTime_2;
     Serial.println("ET2: " + elapseTime_2);
+    Serial.println(elapseTime_2);
     Serial.println("CT2: " + currentTime_2);
+    Serial.println(currentTime_2);
     Serial.println("BT2: " + beforeTime_2);
+    Serial.println(beforeTime_2);
     beforeTime_2 = currentTime_2;
   
     flag_F_tokenTime=true;
