@@ -705,6 +705,7 @@ void loop(){
       if(sender==master && recipient==0){
         b4();
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
+        Serial.println("iniciado");
       }
       // si el master quiere saber: a quien puede escuchar.
       if(sender==master && recipient==254){
