@@ -439,13 +439,13 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte(Zonas);
+      msg1_Write="j";
       // 4. Nodos Leidos 2.
-      msg2_Write=highByte(Zonas);
+      msg2_Write="d";
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
-      Nodo_info=String(Alarma_in_Zona_1+Alarma_in_Zona_2, HEX);
+      Nodo_info=String("samu");
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
     }
     void b3 (){
@@ -705,7 +705,7 @@ void loop(){
       if(sender==master && recipient==0 && flag_F_Nodo_iniciado==false){
         b4();
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-        Serial.println("iniciado");
+        // Serial.println("iniciado");
         flag_F_Nodo_iniciado=true;
       }
       // si el master quiere saber: a quien puede escuchar.
@@ -714,6 +714,7 @@ void loop(){
       }
       // Modo Maestro.
       if(localAddress==master && flag_F_masteRequest){
+          b2();
           flag_F_responder=true;
       }
       // Modo Prueba.
