@@ -420,6 +420,7 @@ void loop(){
 
   //-2.2 Funciones tipo B.
     // Identifico quien Envia el Mensaje Byte
+    
     void b1 (){
       // 1. Destinatario.
       destination=sender;                           // Respondo a quien me escribe.
@@ -452,6 +453,7 @@ void loop(){
       Nodo_info=String("samu");
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
     }
+    // Respuesta al Maestro
     void b3 (){
       // Informacion Acerca de los nodos que pude LEER.
       // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
@@ -508,6 +510,7 @@ void loop(){
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
       letras="OK";
     }
+    // Respueta Nodo Siguiente
     void b6 (){
       // Informacion Acerca de los nodos que pude LEER.
       // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
@@ -707,7 +710,7 @@ void loop(){
       }
       // Broadcast.
       if(sender==master && recipient==0 && flag_F_Nodo_iniciado==false){
-        b4();
+        b6();
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
         // Serial.println("iniciado");
         flag_F_Nodo_iniciado=true;
