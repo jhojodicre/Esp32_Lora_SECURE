@@ -439,9 +439,9 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write="j";
+      msg1_Write=7;
       // 4. Nodos Leidos 2.
-      msg2_Write="d";
+      msg2_Write=7;
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
