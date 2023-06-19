@@ -642,7 +642,7 @@ void loop(){
       if (funtion_Mode=="A" && funtion_Number=="0"){
         Serial.println("funion A Nº0");
         flag_F_nodoRequest=true;
-        secuencia()
+        secuencia();
       }
     // Function Tipo B
       //
