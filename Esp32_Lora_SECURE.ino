@@ -147,7 +147,7 @@
   Ticker temporizador_1;                // Tiempo de respuesta
   Ticker temporizador_2;                // Tiempo token.
   Ticker temporizador_3;                // Tiempo update Server.
-  Ticker temporizador_4;                // Tiempo de respuesta de todas las placas.
+  // Ticker temporizador_4;                // Tiempo de respuesta de todas las placas.
 //5. Funciones ISR.
   //-5.1 Serial Function.
     void serialEvent (){
@@ -702,10 +702,11 @@ void loop(){
         b3();
       }
       // Broadcast.
-      if(sender==master && recipient==0){
+      if(sender==master && recipient==0 flag_F_Nodo_iniciado==false){
         b4();
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
         Serial.println("iniciado");
+        flag_F_Nodo_iniciado=true;
       }
       // si el master quiere saber: a quien puede escuchar.
       if(sender==master && recipient==254){
