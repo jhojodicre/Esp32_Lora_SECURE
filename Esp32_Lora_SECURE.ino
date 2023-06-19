@@ -702,7 +702,7 @@ void loop(){
         b3();
       }
       // Broadcast.
-      if(sender==master && recipient==0 flag_F_Nodo_iniciado==false){
+      if(sender==master && recipient==0 && flag_F_Nodo_iniciado==false){
         b4();
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
         Serial.println("iniciado");
