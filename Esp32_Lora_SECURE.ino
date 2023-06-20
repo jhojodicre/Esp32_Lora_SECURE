@@ -736,6 +736,7 @@ void loop(){
       }
       // Modo Maestro.
       if(localAddress==master && flag_F_masteRequest){
+        b2();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
