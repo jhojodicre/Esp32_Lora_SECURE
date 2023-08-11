@@ -14,7 +14,11 @@
     #define in_Zona_1     32        // Entrada de Zona 1
     #define in_Zona_2     33        // Entrada de Zona 2
     #define in_Zona_3     9         // Entrada de Zona 3
-    #define in_PB_Aceptar 0         // Entrada de Pulsador in_PB_Aceptar 
+  
+    #define in_PB_Aceptar 0         // Entrada de Pulsador in_PB_Aceptar.
+    #define Pulsador_der  39        //
+    #define Pulsador_izq  38        // 
+
   //-2.2 Defflag_F_inicion de etiquetas para las Salidas.
     //********************************************************
     #define LED_azul      2
@@ -79,6 +83,11 @@
     bool          flag_F_PAQUETE=false;
     bool          flag_F_tokenTime=false;
     bool          flag_F_answerTime=false;
+
+    
+    bool          Zona_A_Aceptar;
+    bool          Zona_B_Aceptar;
+    bool          Zonas_Aceptadas;
 // Variables para Logica interna.
 
       byte        master=0xFF;
@@ -90,6 +99,8 @@
       int         Zona_A;
       int         Zona_B;
 
+      bool         ST_Zona_A;
+      bool         ST_Zona_B;
       //************************
       // String Compañeros="0";
       // String Nodo ="1";
@@ -164,20 +175,24 @@
         }
       }
     }
-  //-5.2 Extern Function
+  // -5.2 Extern Function
     ICACHE_RAM_ATTR void ISR_0(){
       flag_ISR_prueba=true;
       Zonas=0;
     }
     ICACHE_RAM_ATTR void ISR_1(){
-      bitSet(Zonas, Zona_A);
+      
     }
     ICACHE_RAM_ATTR void ISR_2(){
-      bitSet(Zonas, Zona_B);
+      
     }
     ICACHE_RAM_ATTR void ISR_3(){
-      flag_ISR_prueba=true;
+      bitClear(Zonas, Zona_A);
     }
+    ICACHE_RAM_ATTR void ISR_4(){
+      bitClear(Zonas, Zona_B);
+    }
+
     // -5.3 Interrupciones por Timer 1.
     void ISR_temporizador_1(){
         currentTime_1 = millis();
@@ -198,6 +213,8 @@ void setup(){
     //1.2 Configuracion de Entradas
       pinMode(in_Zona_1, INPUT_PULLUP);
       pinMode(in_Zona_2, INPUT_PULLUP);
+      pinMode(Pulsador_der, INPUT);
+      pinMode(Pulsador_izq, INPUT);
       // pinMode(in_Zona_3, INPUT_PULLUP);
       // pinMode(in_PB_Aceptar, INPUT_PULLUP);
   //2. Condiciones Iniciales.
@@ -213,6 +230,7 @@ void setup(){
       answerTime      = 6000;
       tokenTime       = 2500;
       updateTime      = 2500;
+
   //3. Configuracion de Perifericos:
     //-3.1 Comunicacion Serial:
       Serial.begin(9600);
@@ -220,10 +238,12 @@ void setup(){
     //-3.2 Temporizador.
     //-3.2 Interrupciones Habilitadas.
       //****************************
-      attachInterrupt (digitalPinToInterrupt (in_PB_Aceptar), ISR_0, FALLING);  // attach interrupt handler for D2
-      attachInterrupt (digitalPinToInterrupt (in_Zona_1), ISR_1, FALLING);      // attach interrupt handler for D2
-      attachInterrupt (digitalPinToInterrupt (in_Zona_2), ISR_2, FALLING);      // attach interrupt handler for D2
-      attachInterrupt (digitalPinToInterrupt (in_Zona_3), ISR_3, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (in_PB_Aceptar), ISR_0, FALLING);  // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (in_Zona_1), ISR_1, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (in_Zona_2), ISR_2, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (Pulsador_der), ISR_3, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (Pulsador_izq), ISR_4, FALLING);      // attach interrupt handler for D2
+      
       //interrupts ();
   //5. Configuracion de DEVICE externos.
     //-5.1 WIFI ESP32 LORA Configuracion.
@@ -301,7 +321,6 @@ void loop(){
         serverUpdate();
         secuencia();
       }
-      
 }
 //1. Funciones de Logic interna del Micro.
   void welcome(){
@@ -402,7 +421,8 @@ void loop(){
       if(a==1){
         beforeTime_1 = millis();
         flag_F_modo_Continuo=true;
-        temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
+        temporizador_1.attach_ms(500, ISR_temporizador_1);
+        secuencia();
       }
       if(a==0){
         flag_F_modo_Continuo=false;
@@ -626,9 +646,18 @@ void loop(){
         Serial.print("Entradas: ");
         Serial.println(info_1=String(Zonas, BIN));
         //5.
+        Serial.print("Zona A: ");
+        Serial.println(Zona_A);
+        Serial.print("Zona B: ");
+        Serial.println(Zona_B);
+        //6.
+        Serial.print("Pulsadores: ");
+        Serial.print(Zona_B_Aceptar);
+        Serial.println(Zona_A_Aceptar);
+        //7.
         Serial.print("Letras: ");
         Serial.println(letras);
-        // //6.
+        //8.
         Serial.print("Tiempo de Respuesta: ");
         Serial.println(answerTime);
       }
@@ -699,31 +728,54 @@ void loop(){
   }
 //4. Funcion que Revisa estados a ser enviados.
   //-4.1 Estados de Zonas.
-    void reviso(){      
-      if(!digitalRead(in_PB_Aceptar)){
-        Alarma_in_Zona_1=0;
-        Alarma_in_Zona_2=0;
-        Alarma_in_Zona_3=0;
-        Nodo_info="0";
+    void reviso(){
+
+      Zona_A_Aceptar=digitalRead(Pulsador_der);
+      Zona_B_Aceptar=digitalRead(Pulsador_izq);
+
+      ST_Zona_A=digitalRead(in_Zona_1);
+      ST_Zona_B=digitalRead(in_Zona_2);
+
+      Zonas_Aceptadas=digitalRead(in_PB_Aceptar);
+
+      if(!Zonas_Aceptadas){
+        bitClear(Zonas, Zona_A);
+        bitClear(Zonas, Zona_B);
       }
+      if(!Zona_A_Aceptar){
+        bitClear(Zonas, Zona_A);
+      }
+      if(!Zona_B_Aceptar){
+        bitClear(Zonas, Zona_B);
+      }
+
+
+      if(!ST_Zona_A){
+        bitSet(Zonas, Zona_A);
+        // Serial.println("zona A");
+      }
+      if(!ST_Zona_B){
+        bitSet(Zonas, Zona_B);
+        // Serial.println("zona B");
+      }
+      
     }
     void secuencia(){
 
-      if(sender==Nodo_anterior && recipient==localAddress){
+      if(recipient==localAddress   && sender==Nodo_anterior){
         b6();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         beforeTime_1 = millis();  // despurar.
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-          
       }
       // Solo se cumple si es el Primer Nodo.
-      if(sender==master && recipient==localAddress){
+      if(recipient==localAddress   && sender==master){
         flag_F_responder=true;
         b3();
       }
       // Broadcast.
-      if(sender==master && recipient==0 && flag_F_Nodo_iniciado==false){
+      if(recipient==0              && sender==master && flag_F_Nodo_iniciado==false){
         b6();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
@@ -731,27 +783,26 @@ void loop(){
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
       }
       // si el master quiere saber: a quien puede escuchar.
-      if(sender==master && recipient==254){
+      if(recipient==254            && sender==master){
         temporizador_2.once_ms(answerTime,ISR_temporizador_2);
       }
       // Modo Maestro.
-      if(localAddress==master && flag_F_masteRequest){
+      if(localAddress==master      && flag_F_masteRequest){
         b2();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
-      // Modo Prueba.
-      if(flag_F_modo_Continuo && flag_ISR_temporizador_1){
-          // b3();
-          // a5_Nodo_Mensaje_ID();
-          // flag_F_responder=true;
-      }
-      // Modo Esclavo
       if(localAddress==Nodo_actual && flag_F_nodoRequest){
         b6();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
+      // Modo Prueba.
+      if(flag_F_modo_Continuo      && flag_ISR_temporizador_1){
+          b3();
+      }
+      // Modo Esclavo
+
       // if(flag_F_answerTime){
       //   b6();
       //   flag_F_responder=true;
