@@ -94,7 +94,9 @@
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
       byte        Nodo_anterior;
       byte        Nodo_actual=0;
-      word        Zonas=0;             // Estado de Zonas Activas.
+      byte        Zonas_MSB;
+      byte        Zonas_LSB;
+      word        Zonas=0;             // Estado de Zonas Activas.      
       int         Nodos = 2;           // Establece Cuantos Nodos Conforman La Red a6.
       int         Zona_A;
       int         Zona_B;
@@ -323,6 +325,7 @@ void loop(){
       RFM95_recibir(LoRa.parsePacket());
       if(flag_F_PAQUETE){
         flag_F_PAQUETE=false;
+        actualizar();
         serverUpdate();
         secuencia();
       }
@@ -457,9 +460,13 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=lowByte(Zonas);
+
       // 4. Nodos Leidos 2.
       msg2_Write=highByte(Zonas);
+      msg1_Write=lowByte(Zonas);
+
+      msg1_Write |=Zonas_LSB;
+      msg2_Write |=Zonas_MSB;
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
@@ -475,9 +482,13 @@ void loop(){
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
-      msg1_Write=7;
+      
       // 4. Nodos Leidos 2.
       msg2_Write=7;
+      msg1_Write=7;
+
+      msg1_Write |=Zonas_LSB;
+      msg2_Write |=Zonas_MSB;
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
@@ -495,6 +506,9 @@ void loop(){
       msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
       msg2_Write=highByte(Zonas);
+
+      msg1_Write |=Zonas_LSB;
+      msg2_Write |=Zonas_MSB;
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -514,6 +528,9 @@ void loop(){
       msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
       msg2_Write=highByte(Zonas);
+
+      msg1_Write |=Zonas_LSB;
+      msg2_Write |=Zonas_MSB;
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -533,6 +550,11 @@ void loop(){
       msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
       msg2_Write=highByte(Zonas);
+
+      msg1_Write |=Zonas_LSB;
+      msg2_Write |=Zonas_MSB;
+
+
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -552,6 +574,10 @@ void loop(){
       msg1_Write=lowByte(Zonas);                            // ANTERIORMENTE incomingMsgId1;
       // 4. Nodos Leidos 2.
       msg2_Write=highByte(Zonas);
+
+      msg1_Write |=Zonas_LSB;
+      msg2_Write |=Zonas_MSB;
+      
       // 5. Longitud de Bytes de la Cadena incoming
         // Este byte lo escribe antes de Enviar el mensaje
       // 6. Este byte contiene Informacion del Nodo
@@ -890,6 +916,10 @@ void loop(){
         Serial.println("SEC,BOK,4,B");
       }
       
+    }
+    void actualizar(){
+      Zonas_MSB=incomingMsgId2;
+      Zonas_LSB=incomingMsgId1;
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
