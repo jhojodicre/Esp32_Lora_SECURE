@@ -129,6 +129,9 @@
       long        answerTime = 1000;
       long        tokenTime  ;
       long        updateTime = 2000;
+
+
+      int         fastTime    =   1;
     // Alarmas
       int         Alarma_in_Zona_1=0;
       int         Alarma_in_Zona_2=0;
@@ -138,7 +141,7 @@
   //-3.3 RFM95 Variables.
       byte        msg1_Write = 0;       // Habilito bandera del Nodo que envia 
       byte        msg2_Write = 0;       // Habilito bandera del Nodo que envia
-      byte        localAddress = 0x01;  // address of this device           a3
+      byte        localAddress = 0x03;  // address of this device           a3
       byte        destination = 0xFF;   // destination to send to           a4
       // long lastSendTime = 0;        // last send time
       // int interval = 2000;
@@ -291,6 +294,8 @@ void loop(){
     Serial.print("BT1: ");
     Serial.println(beforeTime_1);
     beforeTime_1 = currentTime_1;
+
+    b1();
     flag_F_responder=true;
   }
   if(flag_ISR_temporizador_2){
@@ -328,7 +333,7 @@ void loop(){
     flag_F_inicio=false;
     if(flag_depurar){
       Serial.println("Sistema Iniciado");
-      Serial.println("Direccion: ");
+      Serial.print("Direccion: ");
       Serial.println(localAddress);
     }
   }
@@ -445,10 +450,10 @@ void loop(){
 
   //-2.2 Funciones tipo B.
     // Identifico quien Envia el Mensaje Byte
-    
+    // Respuesta Automatica al Nodo Siguiente.
     void b1 (){
       // 1. Destinatario.
-      destination=sender;                           // Respondo a quien me escribe.
+      destination=Nodo_siguiente;                           // Respondo a quien me escribe.
       // 2. Remitente.
       //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
       // 3. Nodos Leidos 1.
@@ -463,6 +468,7 @@ void loop(){
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
       letras="R";
     }
+    // Maestro Inicia La Comunicacion.
     void b2 (){
       // 1. Destinatario.
       destination=0;                           // Respondo a quien me escribe.
@@ -475,7 +481,7 @@ void loop(){
       // 5. Longitud de Bytes de la Cadena incoming.
       // Este byte lo escribe antes de Enviar el mensaje.
       // 6. Este byte contiene Informacion del Nodo.
-      Nodo_info=String("samu");
+      Nodo_info=String("START");
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
     }
     // Respuesta al Maestro
@@ -761,7 +767,8 @@ void loop(){
       
     }
     void secuencia(){
-
+      //_____________Modo NODE_______________________________
+      // Modo NODO  >> NODO SIGUIENTE.
       if(recipient==localAddress   && sender==Nodo_anterior){
         b6();
         beforeTime_2 = millis();  // despurar.
@@ -769,12 +776,22 @@ void loop(){
         beforeTime_1 = millis();  // despurar.
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
       }
-      // Solo se cumple si es el Primer Nodo.
+      // Modo NODO  >> MASTER.
       if(recipient==localAddress   && sender==master){
-        flag_F_responder=true;
+        temporizador_2.once_ms(fastTime, ISR_temporizador_2);
         b3();
       }
-      // Broadcast.
+      // Modo NODO  >> PRINCIPAL.
+      if(localAddress==Nodo_actual && flag_F_nodoRequest){
+        b6();
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+      } 
+      // Modo NODOD >> BROADCAST CONTINUO (Prueba).
+      if(flag_F_modo_Continuo      && flag_ISR_temporizador_1){
+          b3();
+      }
+      // Modo MASTER Broadcast.
       if(recipient==0              && sender==master && flag_F_Nodo_iniciado==false){
         b6();
         beforeTime_2 = millis();  // despurar.
@@ -782,31 +799,18 @@ void loop(){
         beforeTime_1 = millis();  // despurar.
         temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
       }
-      // si el master quiere saber: a quien puede escuchar.
+      // Modo MASTER >> PARTICVULAR si el master quiere saber: a quien puede escuchar.
       if(recipient==254            && sender==master){
         temporizador_2.once_ms(answerTime,ISR_temporizador_2);
       }
-      // Modo Maestro.
-      if(localAddress==master      && flag_F_masteRequest){
-        b2();
-        beforeTime_2 = millis();  // despurar.
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-      }
-      if(localAddress==Nodo_actual && flag_F_nodoRequest){
-        b6();
-        beforeTime_2 = millis();  // despurar.
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-      }
-      // Modo Prueba.
-      if(flag_F_modo_Continuo      && flag_ISR_temporizador_1){
-          b3();
-      }
-      // Modo Esclavo
 
-      // if(flag_F_answerTime){
-      //   b6();
-      //   flag_F_responder=true;
-      // }
+      //_____________Modo MASTER__________________________
+      // Modo MASTRER Principal (INICA LA TRANSMISION)
+      if(localAddress==master      && flag_F_masteRequest){
+        b2();   //destination=0
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+      }
 
     }
     void serverUpdate(){
