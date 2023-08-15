@@ -142,7 +142,8 @@
       long        updateTime = 2000;
       long        masterTime = 10000;
       long        wakeUpTime ;
-
+      long        tokenFirst;
+      long        tokenLast;
       int         fastTime    =   1;
     // Alarmas
       int         Alarma_in_Zona_1=0;
@@ -260,6 +261,13 @@ void setup(){
       wakeUpTime      = tokenTime*localAddress;
       masterTime      = tokenTime*Nodos+tokenTime;
       answerTime      = tokenTime*Nodos;
+      if(localAddress==1){
+        tokenTime=2000;
+      }
+      if(localAddress==Nodo_ultimo){
+        tokenTime=2000;
+        flag_F_Nodo_Ultimo=true;
+      }
       // Mascara de Zonas.
       bitSet(Zonas_Mascaras, Zona_A);
       bitSet(Zonas_Mascaras, Zona_B);
@@ -903,8 +911,8 @@ void loop(){
       // Modo MASTRER Principal (INICA LA TRANSMISION)
       if(localAddress==master      && flag_F_masteRequest){
         b2();   //destination=0
-        beforeTime_2 = millis();  // despurar.
-        temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
+        // beforeTime_2 = millis();  // despurar.
+        // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
       if(localAddress==master      && flag_F_Nodos_Incompletos){
