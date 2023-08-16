@@ -81,11 +81,12 @@
     bool          flag_F_nodoRequest=false;
     bool          flag_F_PAQUETE=false;
     bool          flag_F_tokenTime=false;
-    bool          flag_F_answerTime=false;
+    bool          flag_F_cycleTime=false;
     bool          flag_F_Nodos_Completos=false;
     bool          flag_F_Nodos_Incompletos=false;
     bool          flag_F_Nodo_Iniciado=false;
     bool          flag_F_Nodo_Ultimo=false;
+    bool          flag_F_token=false;               // Se habilita caundo el nodo responde por token
     bool          Zona_A_Aceptar;
     bool          Zona_B_Aceptar;
     bool          Zonas_Aceptadas;
@@ -137,8 +138,8 @@
       long        beforeTime_2 = 0;
 
       long        baseTime   = 1000;
-      long        answerTime = 1000;
-      long        tokenTime  ;
+      long        cycleTime = 1000;
+      long        tokenTime  = 2000;
       long        updateTime = 2000;
       long        masterTime = 10000;
       long        wakeUpTime ;
@@ -220,11 +221,19 @@
     }
     void ISR_temporizador_1(){
         currentTime_1 = millis();
+        if(flag_F_token){
+          flag_F_token=false;
+          return;
+        }
+        
         flag_ISR_temporizador_1=true;
+        b6();
+        
     }
     void ISR_temporizador_2(){
       currentTime_2 = millis();
       flag_ISR_temporizador_2=true;
+      flag_F_token=true;
     }
     void ISR_temporizador_3(){
       flag_ISR_temporizador_3=true;
@@ -251,26 +260,29 @@ void setup(){
       Nodo_anterior   = localAddress - 1;
       Zona_B          = localAddress + (localAddress - 1);
       Zona_A          = Zona_B - 1;
-      incomingMsgId1  = 0xFF;
-      incomingMsgId2  = 0xFF;
+      incomingMsgId1  = 0x00;
+      incomingMsgId2  = 0x00;
       // Original para deployment
-      // answerTime      = localAddress * 20;
+      // cycleTime      = localAddress * 20;
       
       tokenTime       = 2500;
       updateTime      = 2500;
       wakeUpTime      = tokenTime*localAddress;
-      masterTime      = tokenTime*Nodos+tokenTime;
-      answerTime      = tokenTime*Nodos;
-      if(localAddress==1){
+      cycleTime       = tokenTime*Nodos;
+      masterTime      = cycleTime*2;
+      if(localAddress==Nodo_primero){
         tokenTime=2000;
       }
       if(localAddress==Nodo_ultimo){
         tokenTime=2000;
         flag_F_Nodo_Ultimo=true;
+        Nodo_siguiente=Nodo_primero;
       }
       // Mascara de Zonas.
-      bitSet(Zonas_Mascaras, Zona_A);
-      bitSet(Zonas_Mascaras, Zona_B);
+      Zonas_Mascaras=65536;
+      Zonas=0;
+      bitClear(Zonas_Mascaras, Zona_A);
+      bitClear(Zonas_Mascaras, Zona_B);
       Zona_1_Mascara=lowByte(Zonas_Mascaras);
       Zona_2_Mascara=highByte(Zonas_Mascaras);
   //3. Configuracion de Perifericos:
@@ -321,10 +333,10 @@ void loop(){
       reviso();
       actualizar();
   //4. Atender Las fucniones activadas desde ISR.
-    if(flag_ISR_prueba){
-      // flag_ISR_prueba=false;
+  if(flag_ISR_prueba){
+    // flag_ISR_prueba=false;
       // a1_Nodo_Destellos(1,3);
-    }
+  }
   if(flag_ISR_temporizador_1){
     elapseTime_1 = currentTime_1 - beforeTime_1;
     if(flag_depurar){
@@ -366,17 +378,17 @@ void loop(){
     }
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
-      if(flag_F_responder){
-        RFM95_enviar(Nodo_info+letras);
-      }
+  if(flag_F_responder){
+    RFM95_enviar(Nodo_info+letras);
+  }
     //-5.2 RFM95 RECIBIR.
-      RFM95_recibir(LoRa.parsePacket());
-      if(flag_F_PAQUETE){
-        flag_F_PAQUETE=false;
-        actualizar();
-        serverUpdate();
-        secuencia();
-      }
+  RFM95_recibir(LoRa.parsePacket());
+  if(flag_F_PAQUETE){
+    flag_F_PAQUETE=false;
+    actualizar();
+    serverUpdate();
+    secuencia();
+  }
 }
 //1. Funciones de Logic interna del Micro.
   void welcome(){
@@ -449,7 +461,7 @@ void loop(){
 
       Zona_B          = localAddress + (localAddress - 1);
       Zona_A          = Zona_B - 1;
-      // answerTime      = localAddress * 20;
+      // cycleTime      = localAddress * 20;
       if(localAddress==master){
         temporizador_1.detach();
         temporizador_2.detach();
@@ -631,7 +643,10 @@ void loop(){
       // Nodo_info=String(msgNumber, HEX);
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="Q";   //Question solicitd.
+      letras="Tt";   //Question solicitd.
+      if(flag_ISR_temporizador_1){
+        letras="Tc";
+      }
     }
     void b7 (){
       // Informacion Acerca de los nodos que pude LEER.
@@ -650,7 +665,7 @@ void loop(){
       // Nodo_info=String(msgNumber, HEX);
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
       // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="Q";   //Question solicitd.
+      letras="OK";   //Question solicitd.
     }
     void b8 (int a1, int a2){
       int aa=a1;
@@ -749,8 +764,16 @@ void loop(){
         Serial.print("Letras: ");
         Serial.println(letras);
         //8.
-        Serial.print("Tiempo de Respuesta: ");
-        Serial.println(answerTime);
+        Serial.print("tokenTime: ");
+        Serial.println(tokenTime);
+
+        //9.
+        Serial.print("CycleTime: ");
+        Serial.println(cycleTime);
+
+        //10.
+        Serial.print("masterTime: ");
+        Serial.println(masterTime);
       }
       if (funtion_Mode=="A" && funtion_Number=="9"){
         Serial.println("funion A Nº9");
@@ -830,41 +853,41 @@ void loop(){
       Zonas_Aceptadas=digitalRead(in_PB_Aceptar);
       // Pulsadores
       if(!Zonas_Aceptadas){
-        bitSet(Zonas, Zona_A);
-        bitSet(Zonas, Zona_B);
+        bitClear(Zonas, Zona_A);
+        bitClear(Zonas, Zona_B);
       }
       if(!Zona_A_Aceptar){
-        bitSet(Zonas, Zona_A);
+        bitClear(Zonas, Zona_A);
       }
       if(!Zona_B_Aceptar){
-        bitSet(Zonas, Zona_B);
+        bitClear(Zonas, Zona_B);
       }
 
       // Zonas.
       if(!ST_Zona_A){
-        bitClear(Zonas, Zona_A);
+        bitSet(Zonas, Zona_A);
       }
       if(!ST_Zona_B){
-        bitClear(Zonas, Zona_B);
+        bitSet(Zonas, Zona_B);
       }
       
     }
     void secuencia(){
       //_____________Modo NODE_______________________________
       
+
       
       // Modo NODO  PRIMERO>> NODO SIGUIENTE.
-      if(recipient==1              && sender==Nodo_ultimo){
+      if(recipient==localAddress   && sender==Nodo_ultimo){
         b6();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       }
-      // Modo NODO
+      // Modo NODO MAYORES A UNO
       if(recipient==localAddress   && sender==Nodo_anterior && flag_F_Nodo_Ultimo==false){
         b6();
-        
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_Nodo_Iniciado){
-          temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
+          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
         }
         beforeTime_2 = millis();  // despurar.
         beforeTime_1 = millis();  // despurar.
@@ -876,7 +899,26 @@ void loop(){
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         beforeTime_2 = millis();  // despurar.
       }      
+      
+      
+      // Modo MASTER Broadcast.
+      if(recipient==0              && sender==master){
+        b6();
+        flag_F_Nodo_Iniciado=true;
+        beforeTime_2 = millis();  // despurar.
+        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+        beforeTime_1 = millis();  // despurar.
+        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+      }
+      // Modo MASTER >> PARTICVULAR si el master quiere saber: a quien puede escuchar.
+      if(recipient==254            && sender==master && flag_F_Nodo_Iniciado==false){
+        b6();
+        temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
+        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+      }
       // Modo NODO  >> MASTER.
+      
+      // Modo Particular
       if(recipient==localAddress   && sender==master){
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
         b3();
@@ -891,22 +933,8 @@ void loop(){
       if(flag_F_modo_Continuo      && flag_ISR_temporizador_1){
           b3();
       }
-      // Modo MASTER Broadcast.
-      if(recipient==0              && sender==master){
-        b6();
-        flag_F_Nodo_Iniciado=true;
-        beforeTime_2 = millis();  // despurar.
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        beforeTime_1 = millis();  // despurar.
-        temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-      }
-      // Modo MASTER >> PARTICVULAR si el master quiere saber: a quien puede escuchar.
-      if(recipient==254            && sender==master && flag_F_Nodo_Iniciado==false){
-        b6();
-        temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
-        temporizador_1.attach_ms(answerTime, ISR_temporizador_1);
-      }
-
+      
+      
       //_____________Modo MASTER__________________________
       // Modo MASTRER Principal (INICA LA TRANSMISION)
       if(localAddress==master      && flag_F_masteRequest){
@@ -937,80 +965,83 @@ void loop(){
       //   te_toca=0;
       //   Serial.println("SEC,ALL,0,0");
       // }
-      if(incomingMsgId1==255){
+      if(incomingMsgId1==0){
         Serial.println("SEC,ALL,0,0");
         return;
       }
-      if(!bitRead(incomingMsgId1, P1ZA)){
+      if(bitRead(incomingMsgId1, P1ZA)){
         Serial.println("SEC,NOK,1,A");
       }
-      if(!bitRead(incomingMsgId1, P1ZB)){
+      if(bitRead(incomingMsgId1, P1ZB)){
         Serial.println("SEC,NOK,1,B");
       }
-      if(bitRead(incomingMsgId1, P1ZA)){
+      if(!bitRead(incomingMsgId1, P1ZA)){
         Serial.println("SEC,BOK,1,A");
       }
-      if(bitRead(incomingMsgId1, P1ZB)){
+      if(!bitRead(incomingMsgId1, P1ZB)){
         Serial.println("SEC,BOK,1,B");
       }
 
 
-      if(!bitRead(incomingMsgId1, P2ZA)){
+      if(bitRead(incomingMsgId1, P2ZA)){
         Serial.println("SEC,NOK,2,A");
       }
-      if(!bitRead(incomingMsgId1, P2ZB)){
+      if(bitRead(incomingMsgId1, P2ZB)){
         Serial.println("SEC,NOK,2,B");
       }
-      if(bitRead(incomingMsgId1, P2ZA)){
+      if(!bitRead(incomingMsgId1, P2ZA)){
         Serial.println("SEC,BOK,2,A");
       }
-      if(bitRead(incomingMsgId1, P2ZB)){
+      if(!bitRead(incomingMsgId1, P2ZB)){
         Serial.println("SEC,BOK,2,B");
       }
 
 
-      if(!bitRead(incomingMsgId1, P3ZA)){
+      if(bitRead(incomingMsgId1, P3ZA)){
         Serial.println("SEC,NOK,3,A");
       }
-      if(!bitRead(incomingMsgId1, P3ZB)){
+      if(bitRead(incomingMsgId1, P3ZB)){
         Serial.println("SEC,NOK,3,B");
       }
-      if(bitRead(incomingMsgId1, P3ZA)){
+      if(!bitRead(incomingMsgId1, P3ZA)){
         Serial.println("SEC,BOK,3,A");
       }
-      if(bitRead(incomingMsgId1, P3ZB)){
+      if(!bitRead(incomingMsgId1, P3ZB)){
         Serial.println("SEC,BOK,3,B");
       }
 
 
-      if(!bitRead(incomingMsgId1, P4ZA)){
+      if(bitRead(incomingMsgId1, P4ZA)){
         Serial.println("SEC,NOK,4,A");
       }
-      if(!bitRead(incomingMsgId1, P4ZB)){
+      if(bitRead(incomingMsgId1, P4ZB)){
         Serial.println("SEC,NOK,4,B");
       }
-      if(bitRead(incomingMsgId1, P4ZA)){
+      if(!bitRead(incomingMsgId1, P4ZA)){
         Serial.println("SEC,BOK,4,A");
       }
-      if(bitRead(incomingMsgId1, P4ZB)){
+      if(!bitRead(incomingMsgId1, P4ZB)){
         Serial.println("SEC,BOK,4,B");
       }
       
     }
     void actualizar(){
-      
+      //Procedimiento
+      //1. Borrar estados actulaes de entradas Locales
+      //1.1 Conservar estados de Entradas de los demas Nodos Aplicando Una and.
+      //2  Actaulizo estados Propios en el mensaje de Salida con una or.
       //ESTADOS DE ZONAS.
       Zonas_MSB=highByte(Zonas);        //incomingMsgId2;
       Zonas_LSB=lowByte(Zonas);         //incomingMsgId1;
       
        
       // Aplico la Mascara.
-      Zonas_Estados_1=Zona_1_Mascara | incomingMsgId1;
-      Zonas_Estados_2=Zona_1_Mascara | incomingMsgId2;
+      Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
+      Zonas_Estados_2=Zona_1_Mascara & incomingMsgId2;
 
       //Conservo los mensAjes entrantes.
-      Zonas_Estados_1 &= Zonas_LSB;
-      Zonas_Estados_2 &= Zonas_MSB;
+      Zonas_Estados_1 |= Zonas_LSB;
+      Zonas_Estados_2 |= Zonas_MSB;
 
 
       bitSet(Nodos_Reconocidos, sender);
@@ -1092,7 +1123,7 @@ void loop(){
       flag_F_masteRequest=false;
       flag_F_nodoRequest=false;
       flag_F_tokenTime=false;
-      flag_F_answerTime=false;
+      flag_F_cycleTime=false;
       flag_F_Nodo_Iniciado=true;
       sender=0;
       recipient=0;
