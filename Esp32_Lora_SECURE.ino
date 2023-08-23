@@ -1,6 +1,5 @@
 //1. librerias.
-  //- 1.1 Librerias
-    //****************************
+  //- 1.1 Librerias****
     #include <Ticker.h>
     #include <SPI.h>
     #include "heltec.h"
@@ -49,15 +48,15 @@
 
 //3. Variables Globales.
   //-3.1 Variables para las Interrupciones
-    String        inputString;                       // Buffer recepcion Serial.
-    volatile bool falg_ISR_stringComplete= false;    // Flag: mensaje Serial Recibido completo.
     volatile bool flag_ISR_prueba=false;             // Flag: prueba para interrupcion serial.
+    volatile bool falg_ISR_stringComplete=false;    // Flag: mensaje Serial Recibido completo.
     volatile bool flag_ISR_temporizador_1=false;
     volatile bool flag_ISR_temporizador_2=false;
     volatile bool flag_ISR_temporizador_3=false;        // pra actualizar los dato al servidor.
     volatile bool flag_ISR_temporizador_0=false;
   //-3.2 Variables Globales para Las Funciones.
     //********************************************************
+    String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
     String        funtion_Parmeter1;     // Parametro 1 de la Funcion.
@@ -90,7 +89,7 @@
     bool          Zona_A_Aceptar;
     bool          Zona_B_Aceptar;
     bool          Zonas_Aceptadas;
-// Variables para Logica interna.
+  //-3.3 Variables para Logica interna.
 
       byte        master=0xFF;
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
@@ -110,8 +109,8 @@
       int         Zona_A;
       int         Zona_B;
       int         Nodos_Reconocidos;
-      bool        ST_Zona_A;
-      bool        ST_Zona_B;
+      bool        Zona_A_ST;
+      bool        Zona_B_ST;
 
       //************************
       // String Compañeros="0";
@@ -152,7 +151,7 @@
       int         Alarma_in_Zona_3=0;
     // Eventos
       
-  //-3.3 RFM95 Variables.
+  //-3.4 RFM95 Variables.
       byte        msg1_Write    = 0;       // Habilito bandera del Nodo que envia 
       byte        msg2_Write    = 0;       // Habilito bandera del Nodo que envia
       byte        localAddress  = 0x01;  // address of this device           a3
@@ -172,7 +171,6 @@
 
 //4. Intancias.
   //********************************************************
-
   Ticker temporizador_1;                // Tiempo de respuesta
   Ticker temporizador_2;                // Tiempo token.
   Ticker temporizador_3;                // Tiempo update Server.
@@ -194,7 +192,7 @@
         }
       }
     }
-  // -5.2 Extern Function
+  //-5.2 Extern Function
     ICACHE_RAM_ATTR void ISR_0(){
       flag_ISR_prueba=true;
       Zonas=0;
@@ -241,15 +239,12 @@
     }
 void setup(){
   //1. Configuracion de Puertos.
-    //****************************
     //1.1 Configuracion de Salidas:
     //1.2 Configuracion de Entradas
       pinMode(in_Zona_1, INPUT);
       pinMode(in_Zona_2, INPUT);
       pinMode(Pulsador_der, INPUT);
       pinMode(Pulsador_izq, INPUT);
-      // pinMode(in_Zona_3, INPUT_PULLUP);
-      // pinMode(in_PB_Aceptar, INPUT_PULLUP);
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
     //-2.2 Valores y Espacios de Variables.
@@ -262,7 +257,7 @@ void setup(){
       Zona_A          = Zona_B - 1;
       incomingMsgId1  = 0x00;
       incomingMsgId2  = 0x00;
-      // Original para deployment
+    // answer time
       // cycleTime      = localAddress * 20;
       
       tokenTime       = 2500;
@@ -279,7 +274,7 @@ void setup(){
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
-      // Mascara de Zonas.
+    // Mascara de Zonas.
       Zonas_Mascaras=65536;
       Zonas=0;
       bitClear(Zonas_Mascaras, Zona_A);
@@ -290,7 +285,7 @@ void setup(){
     //-3.1 Comunicacion Serial:
       Serial.begin(9600);
       delay(10);
-    //-3.2 Temporizador.
+    
     //-3.2 Interrupciones Habilitadas.
       //****************************
       // attachInterrupt (digitalPinToInterrupt (in_PB_Aceptar), ISR_0, FALLING);  // attach interrupt handler for D2
@@ -300,96 +295,94 @@ void setup(){
       // attachInterrupt (digitalPinToInterrupt (Pulsador_izq), ISR_4, FALLING);      // attach interrupt handler for D2
       
       //interrupts ();
+
+  //4. Prueba de Sitema Minimo Configurado.
+    if(flag_depurar){
+      Serial.println("Sistema Minimo Configurado");
+    }
   //5. Configuracion de DEVICE externos.
     //-5.1 WIFI ESP32 LORA Configuracion.
       Heltec.begin(true /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, RFM95_FREQ /*long BAND*/);
-      //****************************
-  //4. Prueba de Sitema Minimo Configurado.
-    //****************************
-    if(flag_depurar){
-      Serial.println("Sistema Minimo Configurado");
-    }    
+      //****************************   
 }
 void loop(){
-  //1. Bienvenida Funcion 
-    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  //1. Bienvenida Funcion
     while (flag_F_inicio){
       welcome();        // Comprobamos el Sistema minimo de Funcionamiento.
       led_Monitor(3);
     }
   //2. Decodificar funcion serial
-    //+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     if(falg_ISR_stringComplete){
       decodificar_solicitud();
     }
   //3. Ejecutar Funcion
-    //-3.1 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       if(flag_F_codified_funtion){
         ejecutar_solicitud();
         // 3.1 Desactivar Banderas.
         flag_F_codified_funtion=false;
         inputString="";
       }
-    //-3.2 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      reviso();
-      actualizar();
-  //4. Atender Las fucniones activadas desde ISR.
-  if(flag_ISR_prueba){
-    // flag_ISR_prueba=false;
-      // a1_Nodo_Destellos(1,3);
-  }
-  if(flag_ISR_temporizador_1){
-    elapseTime_1 = currentTime_1 - beforeTime_1;
-    if(flag_depurar){
-      Serial.print("ET1: ");
-      Serial.println(elapseTime_1);
-      Serial.print("CT1: ");
-      Serial.println(currentTime_1);
-      Serial.print("BT1: ");
-      Serial.println(beforeTime_1);
-    }
-    
-    beforeTime_1 = currentTime_1;
+  //4. Atender Las fucniones activadas desde ISR FLAGS.
+    //-4.1 Bandera de Prueba.
+      if(flag_ISR_prueba){
+      // flag_ISR_prueba=false;
+        // a1_Nodo_Destellos(1,3);
+      }
+    //-4.2 F- Recepcion de Paquete.
+      if(flag_F_PAQUETE){
+        flag_F_PAQUETE=false;
+        actualizar();
+        serverUpdate();
+        secuencia();
+      }
+    //-4.3 F- Timer 1.
+      if(flag_ISR_temporizador_1){
+      elapseTime_1 = currentTime_1 - beforeTime_1;
+      if(flag_depurar){
+        Serial.print("ET1: ");
+        Serial.println(elapseTime_1);
+        Serial.print("CT1: ");
+        Serial.println(currentTime_1);
+        Serial.print("BT1: ");
+        Serial.println(beforeTime_1);
+      }
+      
+      beforeTime_1 = currentTime_1;
 
-    b1();
-    flag_F_responder=true;
-  }
-  if(flag_ISR_temporizador_2){
-    elapseTime_2 = currentTime_2 - beforeTime_2;
+      b1();
+      flag_F_responder=true;
+      }
+    //-4.4 F- Timer 2.
+      if(flag_ISR_temporizador_2){
+        elapseTime_2 = currentTime_2 - beforeTime_2;
 
-    if(flag_depurar){
-      Serial.print("ET2: ");
-      Serial.println(elapseTime_2);
-      Serial.print("CT2: ");
-      Serial.println(currentTime_2);
-      Serial.print("BT2: ");
-      Serial.println(beforeTime_2);
-      beforeTime_2 = currentTime_2;
-    }
-    
-  
-    flag_F_tokenTime=true;
-    flag_F_responder=true;
-  }
-  if(flag_ISR_temporizador_0){
-    flag_F_responder=true;
-  }
-  if(flag_F_updateServer){
-      serverUpdate();
-    }
+        if(flag_depurar){
+          Serial.print("ET2: ");
+          Serial.println(elapseTime_2);
+          Serial.print("CT2: ");
+          Serial.println(currentTime_2);
+          Serial.print("BT2: ");
+          Serial.println(beforeTime_2);
+          beforeTime_2 = currentTime_2;
+        }     
+        flag_F_tokenTime=true;
+        flag_F_responder=true;
+      }
+    //-4.5 F- Timer 0.
+      if(flag_ISR_temporizador_0){
+      flag_F_responder=true;
+      }
+    //-4.6 F- Server Update.
+      if(flag_F_updateServer){
+        serverUpdate();
+      }
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
-  if(flag_F_responder){
-    RFM95_enviar(Nodo_info+letras);
-  }
+      if(flag_F_responder){
+        RFM95_enviar(Nodo_info+letras);
+      }
     //-5.2 RFM95 RECIBIR.
-  RFM95_recibir(LoRa.parsePacket());
-  if(flag_F_PAQUETE){
-    flag_F_PAQUETE=false;
-    actualizar();
-    serverUpdate();
-    secuencia();
-  }
+      RFM95_recibir(LoRa.parsePacket());
 }
 //1. Funciones de Logic interna del Micro.
   void welcome(){
@@ -430,8 +423,194 @@ void loop(){
       Serial.println("Parametro3: " + funtion_Parmeter3+ "\n");
     }
   }
-//2. Funciones Seleccionadas para Ejecutar.
-  //-2.1 Funciones Tipo A.
+//2. Gestiona las funciones a Ejecutar.
+  void ejecutar_solicitud(){
+    // Deshabilitamos Banderas
+      x1=funtion_Parmeter1.toInt();
+      x2=funtion_Parmeter2.toInt();
+      x3=funtion_Parmeter3.toInt();
+    // Function Tipo A
+      if (funtion_Mode=="A" && funtion_Number=="1"){
+        if(flag_depurar){
+          Serial.println("funion A Nº001");
+        }  
+        a1_Nodo_Destellos(x1,x2);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="2"){
+        if(flag_depurar){
+          Serial.println("funion A Nº2");
+        }
+        a2();
+      }
+      if (funtion_Mode=="A" && funtion_Number=="3"){
+        // FUNCIONO A MEDIAS SOLO DIRECIONES BAJAS Y 255 falta acomodar un poco mas
+        if(flag_depurar){
+          Serial.println("funion A Nº3");
+        }
+        String Nodo_direccion_aux = "";
+        Nodo_direccion_aux = funtion_Parmeter1 + funtion_Parmeter2 + funtion_Parmeter3;
+        //Serial.println(Nodo_direccion_aux);
+        int Nodo_direccion = Nodo_direccion_aux.toInt();
+        //Serial.println(Nodo_direccion);
+        a3_Nodo_Direccion_Local(Nodo_direccion);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="4"){
+        if(flag_depurar){
+          Serial.println("funion A Nº4");
+        }
+        String Nodo_destino_aux = "";
+        Nodo_destino_aux = funtion_Parmeter1+funtion_Parmeter2+funtion_Parmeter3;
+        int Nodo_destino = Nodo_destino_aux.toInt();
+        a4_Nodo_Direccion_Destino(Nodo_destino);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="5"){
+        if(flag_depurar){
+          Serial.println("funion A Nº5");
+        }
+      }
+      if (funtion_Mode=="A" && funtion_Number=="6"){
+        if(flag_depurar){
+          Serial.println("funion A Nº6: Numero de Nodos");
+        }
+        String Nodos_numeros_aux = funtion_Parmeter1+funtion_Parmeter2;
+        int Nodos_numeros = Nodos_numeros_aux.toInt();
+        a6_Nodo_Numeros(Nodos_numeros);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="7"){
+        if(flag_depurar){
+          Serial.println("funion A Nº7");
+        }
+        a7(x1,x2);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="8"){
+        Serial.println("funion A Nº8 Status");
+        //1.
+        Serial.print("Direccion Local: ");
+        Serial.println(localAddress);
+        //2.
+        Serial.print("Direccion Destino: ");
+        Serial.println(destination);
+        //3.
+        Serial.print("Modo Continuo: ");
+        Serial.println(flag_F_modo_Continuo);
+        //4.
+        Serial.print("Entradas: ");
+        Serial.println(info_1=String(Zonas, BIN));
+        //5.
+        Serial.print("Zona A: ");
+        Serial.println(Zona_A);
+        Serial.print("Zona B: ");
+        Serial.println(Zona_B);
+        //6.
+        Serial.print("Pulsadores: ");
+        Serial.print(Zona_B_Aceptar);
+        Serial.println(Zona_A_Aceptar);
+        //7.
+        Serial.print("Letras: ");
+        Serial.println(letras);
+        //8.
+        Serial.print("tokenTime: ");
+        Serial.println(tokenTime);
+
+        //9.
+        Serial.print("CycleTime: ");
+        Serial.println(cycleTime);
+
+        //10.
+        Serial.print("masterTime: ");
+        Serial.println(masterTime);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="9"){
+        if(flag_depurar){
+          Serial.println("funion A Nº9");
+        }
+        flag_F_masteRequest=true;
+        letras=inputString.substring(2);
+        secuencia();
+        // Serial.println(letras);
+      }
+      if (funtion_Mode=="A" && funtion_Number=="0"){
+        if(flag_depurar){
+          Serial.println("funion A Nº0");
+        }
+        flag_F_nodoRequest=true;
+        secuencia();
+      }
+    // Function Tipo B
+      //
+      if (funtion_Mode=="B" && funtion_Number=="1"){
+        if(flag_depurar){
+          Serial.println("funion B Nº1: Quien envia?");
+        }
+        b1();
+      }
+      if (funtion_Mode=="B" && funtion_Number=="2"){
+        if(flag_depurar){
+          Serial.println("funion B Nº2: Preparo informacion propia");
+        }
+        b2();
+      }
+      if (funtion_Mode=="B" && funtion_Number=="3"){
+        if(flag_depurar){
+          Serial.println("funion B Nº3:  info recibida ");
+        }
+        b3();
+      }
+      if (funtion_Mode=="B" && funtion_Number=="4"){
+        if(flag_depurar){
+          Serial.println("funion B Nº4");
+        }
+        b4();
+      }
+      if (funtion_Mode=="B" && funtion_Number=="5"){
+        if(flag_depurar){
+          Serial.println("funion B Nº5");
+        }
+        b5();
+      }
+      if (funtion_Mode=="B" && funtion_Number=="6"){
+        if(flag_depurar){
+          Serial.println("funion B Nº6");
+        }
+        b6();
+      }        
+      if (funtion_Mode=="B" && funtion_Number=="7"){
+        if(flag_depurar){
+          Serial.println("funion B Nº7");
+        }
+        b7();
+      }
+      if (funtion_Mode=="B" && funtion_Number=="8"){
+        if(flag_depurar){
+          Serial.println("funion B Nº8");
+        }
+        b8(1,1);
+      }     
+      if (funtion_Mode=="B" && funtion_Number=="9"){
+        if(flag_depurar){
+          Serial.println("SEC,NOK,0,A");
+        }
+      }     
+      if (funtion_Mode=="B" && funtion_Number=="0"){
+        if(flag_depurar){
+          Serial.println("funion B Nº0");
+        }
+        b0();
+      }                            
+    // Function tipo C
+      if (funtion_Mode=="C" && funtion_Number=="1"){
+        Serial.println("funion C Nº1: updateServer");
+        c1(x2);
+      }
+      else{
+        if(flag_depurar){
+        Serial.println("Ninguna Funcion");
+        }
+      }
+      
+  }
+//3. Funciones Seleccionadas para Ejecutar.
+  //-3.1 Funciones tipo A.
     void a1_Nodo_Destellos (int repeticiones, int tiempo){
       // FUNCION PROBADA CORRECTAMENTE
       int veces=repeticiones;
@@ -512,171 +691,154 @@ void loop(){
       msg2_Write=0;
     }
 
-  //-2.2 Funciones tipo B.
+  //-3.2 Funciones tipo B.
     // Identifico quien Envia el Mensaje Byte
-    void b0 (){
-      // Informacion Acerca de los nodos que pude LEER.
-      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-      destination=254;
-                                 // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
+      void b0 (){
+        // Informacion Acerca de los nodos que pude LEER.
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=254;
+                                  // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
 
-      // 5. Longitud de Bytes de la Cadena incoming
-        // Este byte lo escribe antes de Enviar el mensaje
-      // 6. Este byte contiene Informacion del Nodo
-      // Nodo_info=String(msgNumber, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="R";
-    }
-    // Respuesta Automatica al Nodo Siguiente.
-    void b1 (){
-      // 1. Destinatario.
-      destination=Nodo_siguiente;                           // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
-      // 4. Nodos Leidos 2.
-      // 5. Longitud de Bytes de la Cadena incoming.
-      // Este byte lo escribe antes de Enviar el mensaje.
-      // 6. Este byte contiene Informacion del Nodo.
-      Nodo_info=String(nodo_informa, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="R";
-    }
-    // Maestro Inicia La Comunicacion.
-    void b2 (){
-      // 1. Destinatario.
-      destination=0;                           // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      
-      // 4. Nodos Leidos 2.
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
-
-      // 5. Longitud de Bytes de la Cadena incoming.
-      // Este byte lo escribe antes de Enviar el mensaje.
-      // 6. Este byte contiene Informacion del Nodo.
-      Nodo_info=String("START");
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-    }
-    // Respuesta al Maestro
-    void b3 (){
-      // Informacion Acerca de los nodos que pude LEER.
-      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-      destination=master;                           // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
-
-      // 5. Longitud de Bytes de la Cadena incoming
-        // Este byte lo escribe antes de Enviar el mensaje
-      // 6. Este byte contiene Informacion del Nodo
-      // Nodo_info=String(msgNumber, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="R";
-    }
-    void b4 (){
-      // MASTER BROADCAST
-      // Informacion Acerca de los nodos que pude LEER.
-      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-      destination=master;                           // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
-
-      // 5. Longitud de Bytes de la Cadena incoming
-        // Este byte lo escribe antes de Enviar el mensaje
-      // 6. Este byte contiene Informacion del Nodo
-      // Nodo_info=String(msgNumber, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="ReadyR";
-    }
-    void b5 (){
-      // MASTER CODE 254
-      // Informacion Acerca de los nodos que pude LEER.
-      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-      destination=master;                         // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
-
-      // 5. Longitud de Bytes de la Cadena incoming
-        // Este byte lo escribe antes de Enviar el mensaje
-      // 6. Este byte contiene Informacion del Nodo
-      // Nodo_info=String(msgNumber, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="OK";
-    }
-    // Respueta Nodo Siguiente
-    void b6 (){
-      // Informacion Acerca de los nodos que pude LEER.
-      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-      destination=Nodo_siguiente;                           // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;
-      // 5. Longitud de Bytes de la Cadena incoming
-        // Este byte lo escribe antes de Enviar el mensaje
-      // 6. Este byte contiene Informacion del Nodo
-      // Nodo_info=String(msgNumber, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="Tt";   //Question solicitd.
-      if(flag_ISR_temporizador_1){
-        letras="Tc";
+        // 5. Longitud de Bytes de la Cadena incoming
+          // Este byte lo escribe antes de Enviar el mensaje
+        // 6. Este byte contiene Informacion del Nodo
+        // Nodo_info=String(msgNumber, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="R";
       }
-    }
-    void b7 (){
-      // Informacion Acerca de los nodos que pude LEER.
-      // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-      destination=Nodo_primero;                           // Respondo a quien me escribe.
-      // 2. Remitente.
-      //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-      // 3. Nodos Leidos 1.
-      msg2_Write=Zonas_Estados_2;
-      msg1_Write=Zonas_Estados_1;                           // ANTERIORMENTE incomingMsgId1;
-      // 4. Nodos Leidos 2.
-            
-      // 5. Longitud de Bytes de la Cadena incoming
-        // Este byte lo escribe antes de Enviar el mensaje
-      // 6. Este byte contiene Informacion del Nodo
-      // Nodo_info=String(msgNumber, HEX);
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      // 7. Byte Escrito desde recepcion Serial o Predefinido.
-      letras="OK";   //Question solicitd.
-    }
-    void b8 (int a1, int a2){
-      int aa=a1;
-      int aa2=a2;
-    }
-    void b9 (int a1, int a2){
-      int aa=a1;
-      int aa2=a2;
-    }
-  //-2.3 Funciones tipo C.
+    // Respuesta Automatica al Nodo Siguiente.
+    // Maestro Inicia La Comunicacion.
+      void b2 (){
+        // 1. Destinatario.
+        destination=0;                           // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        
+        // 4. Nodos Leidos 2.
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
+
+        // 5. Longitud de Bytes de la Cadena incoming.
+        // Este byte lo escribe antes de Enviar el mensaje.
+        // 6. Este byte contiene Informacion del Nodo.
+        Nodo_info=String("START");
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+      }
+    // Respuesta al Maestro
+      void b3 (){
+        // Informacion Acerca de los nodos que pude LEER.
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=master;                           // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
+
+        // 5. Longitud de Bytes de la Cadena incoming
+          // Este byte lo escribe antes de Enviar el mensaje
+        // 6. Este byte contiene Informacion del Nodo
+        // Nodo_info=String(msgNumber, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="R";
+      }
+      void b4 (){
+        // MASTER BROADCAST
+        // Informacion Acerca de los nodos que pude LEER.
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=master;                           // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
+
+        // 5. Longitud de Bytes de la Cadena incoming
+          // Este byte lo escribe antes de Enviar el mensaje
+        // 6. Este byte contiene Informacion del Nodo
+        // Nodo_info=String(msgNumber, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="ReadyR";
+      }
+      void b5 (){
+        // MASTER CODE 254
+        // Informacion Acerca de los nodos que pude LEER.
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=master;                         // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
+
+        // 5. Longitud de Bytes de la Cadena incoming
+          // Este byte lo escribe antes de Enviar el mensaje
+        // 6. Este byte contiene Informacion del Nodo
+        // Nodo_info=String(msgNumber, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="OK";
+      }
+    // Respueta Nodo Siguiente
+      void b6 (){
+        // Informacion Acerca de los nodos que pude LEER.
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=Nodo_siguiente;                           // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
+        // 5. Longitud de Bytes de la Cadena incoming
+          // Este byte lo escribe antes de Enviar el mensaje
+        // 6. Este byte contiene Informacion del Nodo
+        // Nodo_info=String(msgNumber, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="Tt";   //Question solicitd.
+        if(flag_ISR_temporizador_1){
+          letras="Tc";
+        }
+      }
+      void b7 (){
+        // Informacion Acerca de los nodos que pude LEER.
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=Nodo_primero;                           // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;                           // ANTERIORMENTE incomingMsgId1;
+        // 4. Nodos Leidos 2.
+              
+        // 5. Longitud de Bytes de la Cadena incoming
+          // Este byte lo escribe antes de Enviar el mensaje
+        // 6. Este byte contiene Informacion del Nodo
+        // Nodo_info=String(msgNumber, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="OK";   //Question solicitd.
+      }
+      void b8 (int a1, int a2){
+        int aa=a1;
+        int aa2=a2;
+      }
+      void b9 (int a1, int a2){
+        int aa=a1;
+        int aa2=a2;
+      }
+  //-3.3 Funciones tipo C.
     void c1(int modo_updateServer){
       int a=modo_updateServer;
       if(a==1){
@@ -688,159 +850,7 @@ void loop(){
         temporizador_3.detach();
       }
     }
-//3. Gestiona las funciones a Ejecutar.
-  void ejecutar_solicitud(){
-    // Deshabilitamos Banderas
-      x1=funtion_Parmeter1.toInt();
-      x2=funtion_Parmeter2.toInt();
-      x3=funtion_Parmeter3.toInt();
-    // Function Tipo A
-      if (funtion_Mode=="A" && funtion_Number=="1"){
-        if(flag_depurar){
-          Serial.println("funion A Nº001");
-        }
-        
-        a1_Nodo_Destellos(x1,x2);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="2"){
-        Serial.println("funion A Nº2");
-        a2();
-      }
-      if (funtion_Mode=="A" && funtion_Number=="3"){
-        // FUNCIONO A MEDIAS SOLO DIRECIONES BAJAS Y 255 falta acomodar un poco mas
-        if(flag_depurar){
-          Serial.println("funion A Nº3");
-        }
-        String Nodo_direccion_aux = "";
-        Nodo_direccion_aux = funtion_Parmeter1 + funtion_Parmeter2 + funtion_Parmeter3;
-        //Serial.println(Nodo_direccion_aux);
-        int Nodo_direccion = Nodo_direccion_aux.toInt();
-        //Serial.println(Nodo_direccion);
-        a3_Nodo_Direccion_Local(Nodo_direccion);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="4"){
-        Serial.println("funion A Nº4");
-        String Nodo_destino_aux = "";
-        Nodo_destino_aux = funtion_Parmeter1+funtion_Parmeter2+funtion_Parmeter3;
-        int Nodo_destino = Nodo_destino_aux.toInt();
-        a4_Nodo_Direccion_Destino(Nodo_destino);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="5"){
-        Serial.println("funion A Nº5");
-      }
-      if (funtion_Mode=="A" && funtion_Number=="6"){
-        Serial.println("funion A Nº6: Numero de Nodos");
-        String Nodos_numeros_aux = funtion_Parmeter1+funtion_Parmeter2;
-        int Nodos_numeros = Nodos_numeros_aux.toInt();
-        a6_Nodo_Numeros(Nodos_numeros);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="7"){
-        Serial.println("funion A Nº7");
-        a7(x1,x2);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="8"){
-        Serial.println("funion A Nº8 Status");
-        //1.
-        Serial.print("Direccion Local: ");
-        Serial.println(localAddress);
-        //2.
-        Serial.print("Direccion Destino: ");
-        Serial.println(destination);
-        //3.
-        Serial.print("Modo Continuo: ");
-        Serial.println(flag_F_modo_Continuo);
-        //4.
-        Serial.print("Entradas: ");
-        Serial.println(info_1=String(Zonas, BIN));
-        //5.
-        Serial.print("Zona A: ");
-        Serial.println(Zona_A);
-        Serial.print("Zona B: ");
-        Serial.println(Zona_B);
-        //6.
-        Serial.print("Pulsadores: ");
-        Serial.print(Zona_B_Aceptar);
-        Serial.println(Zona_A_Aceptar);
-        //7.
-        Serial.print("Letras: ");
-        Serial.println(letras);
-        //8.
-        Serial.print("tokenTime: ");
-        Serial.println(tokenTime);
 
-        //9.
-        Serial.print("CycleTime: ");
-        Serial.println(cycleTime);
-
-        //10.
-        Serial.print("masterTime: ");
-        Serial.println(masterTime);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="9"){
-        Serial.println("funion A Nº9");
-        flag_F_masteRequest=true;
-        letras=inputString.substring(2);
-        secuencia();
-        // Serial.println(letras);
-      }
-      if (funtion_Mode=="A" && funtion_Number=="0"){
-        Serial.println("funion A Nº0");
-        flag_F_nodoRequest=true;
-        secuencia();
-      }
-    // Function Tipo B
-      //
-      if (funtion_Mode=="B" && funtion_Number=="1"){
-        Serial.println("funion B Nº1: Quien envia?");
-        b1();
-      }
-      if (funtion_Mode=="B" && funtion_Number=="2"){
-        Serial.println("funion B Nº2: Preparo informacion propia");
-        b2();
-      }
-      if (funtion_Mode=="B" && funtion_Number=="3"){
-        Serial.println("funion B Nº3:  info recibida ");
-        b3();
-      }
-      if (funtion_Mode=="B" && funtion_Number=="4"){
-        Serial.println("funion B Nº4");
-        b4();
-      }
-      if (funtion_Mode=="B" && funtion_Number=="5"){
-        Serial.println("funion B Nº5");
-        b5();
-      }
-      if (funtion_Mode=="B" && funtion_Number=="6"){
-        Serial.println("funion B Nº6");
-        b6();
-      }        
-      if (funtion_Mode=="B" && funtion_Number=="7"){
-        Serial.println("funion B Nº7");
-        b7();
-      }
-      if (funtion_Mode=="B" && funtion_Number=="8"){
-        Serial.println("funion B Nº8");
-        b8(1,1);
-      }     
-      if (funtion_Mode=="B" && funtion_Number=="9"){
-        Serial.println("SEC,NOK,0,A");
-      }     
-      if (funtion_Mode=="B" && funtion_Number=="0"){
-        Serial.println("funion B Nº0");
-        b0();
-      }                            
-    // Function tipo C
-      if (funtion_Mode=="C" && funtion_Number=="1"){
-        Serial.println("funion C Nº1: updateServer");
-        c1(x2);
-      }
-      else{
-        if(flag_depurar){
-        Serial.println("Ninguna Funcion");
-        }
-      }
-      
-  }
 //4. Funcion que Revisa estados a ser enviados.
   //-4.1 Estados de Zonas.
     void reviso(){
@@ -848,8 +858,8 @@ void loop(){
       Zona_A_Aceptar=digitalRead(Pulsador_der);
       Zona_B_Aceptar=digitalRead(Pulsador_izq);
 
-      ST_Zona_A=digitalRead(in_Zona_1);
-      ST_Zona_B=digitalRead(in_Zona_2);
+      Zona_A_ST=digitalRead(in_Zona_1);
+      Zona_B_ST=digitalRead(in_Zona_2);
 
       Zonas_Aceptadas=digitalRead(in_PB_Aceptar);
       // Pulsadores
@@ -865,19 +875,17 @@ void loop(){
       }
 
       // Zonas.
-      if(!ST_Zona_A){
+      if(!Zona_A_ST){
         bitSet(Zonas, Zona_A);
       }
-      if(!ST_Zona_B){
+      if(!Zona_B_ST){
         bitSet(Zonas, Zona_B);
       }
       
     }
     void secuencia(){
       //_____________Modo NODE_______________________________
-      
 
-      
       // Modo NODO  PRIMERO>> NODO SIGUIENTE.
       // if(recipient==localAddress   && sender==Nodo_ultimo){
       //   b6();
