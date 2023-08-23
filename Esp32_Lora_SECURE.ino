@@ -12,7 +12,7 @@
   
   //-2.1 Defflag_F_inicion de etiquetas para las Entradas.
     #define in_Zona_1     32        // Entrada de Zona 1
-    #define in_Zona_2     33        // Entrada de Zona 2
+    #define in_Zona_2     34        // Entrada de Zona 2
     #define in_Zona_3     9         // Entrada de Zona 3
   
     #define in_PB_Aceptar 0         // Entrada de Pulsador in_PB_Aceptar.
@@ -155,7 +155,7 @@
   //-3.3 RFM95 Variables.
       byte        msg1_Write    = 0;       // Habilito bandera del Nodo que envia 
       byte        msg2_Write    = 0;       // Habilito bandera del Nodo que envia
-      byte        localAddress  = 0xFF;  // address of this device           a3
+      byte        localAddress  = 0x01;  // address of this device           a3
       byte        destination   = 0x01;   // destination to send to  0xFF;         a4
       // long lastSendTime = 0;        // last send time
       // int interval = 2000;
@@ -244,8 +244,8 @@ void setup(){
     //****************************
     //1.1 Configuracion de Salidas:
     //1.2 Configuracion de Entradas
-      pinMode(in_Zona_1, INPUT_PULLUP);
-      pinMode(in_Zona_2, INPUT_PULLUP);
+      pinMode(in_Zona_1, INPUT);
+      pinMode(in_Zona_2, INPUT);
       pinMode(Pulsador_der, INPUT);
       pinMode(Pulsador_izq, INPUT);
       // pinMode(in_Zona_3, INPUT_PULLUP);
@@ -272,6 +272,7 @@ void setup(){
       masterTime      = cycleTime*2;
       if(localAddress==Nodo_primero){
         tokenTime=2000;
+        Nodo_anterior=Nodo_ultimo;
       }
       if(localAddress==Nodo_ultimo){
         tokenTime=2000;
@@ -878,12 +879,12 @@ void loop(){
 
       
       // Modo NODO  PRIMERO>> NODO SIGUIENTE.
-      if(recipient==localAddress   && sender==Nodo_ultimo){
-        b6();
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-      }
+      // if(recipient==localAddress   && sender==Nodo_ultimo){
+      //   b6();
+      //   temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+      // }
       // Modo NODO MAYORES A UNO
-      if(recipient==localAddress   && sender==Nodo_anterior && flag_F_Nodo_Ultimo==false){
+      if(recipient==localAddress   && sender==Nodo_anterior){
         b6();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         if(flag_F_Nodo_Iniciado){
@@ -893,12 +894,12 @@ void loop(){
         beforeTime_1 = millis();  // despurar.
       }
       // Modo NODO ULTIMO >> NODO PRIMERO.
-      if(recipient==localAddress   && sender==Nodo_anterior && flag_F_Nodo_Ultimo){
-        b7();
-        Nodo_ultimo=false;
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        beforeTime_2 = millis();  // despurar.
-      }      
+      // if(recipient==localAddress   && sender==Nodo_anterior && flag_F_Nodo_Ultimo){
+      //   b7();
+      //   Nodo_ultimo=false;
+      //   temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+      //   beforeTime_2 = millis();  // despurar.
+      // }      
       
       
       // Modo MASTER Broadcast.
@@ -1037,7 +1038,7 @@ void loop(){
        
       // Aplico la Mascara.
       Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
-      Zonas_Estados_2=Zona_1_Mascara & incomingMsgId2;
+      Zonas_Estados_2=Zona_2_Mascara & incomingMsgId2;
 
       //Conservo los mensAjes entrantes.
       Zonas_Estados_1 |= Zonas_LSB;
