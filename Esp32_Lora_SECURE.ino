@@ -11,7 +11,7 @@
   
   //-2.1 Defflag_F_inicion de etiquetas para las Entradas.
     #define in_Zona_1     32        // Entrada de Zona 1
-    #define in_Zona_2     34        // Entrada de Zona 2
+    #define in_Zona_2     33        // Entrada de Zona 2
     #define in_Zona_3     9         // Entrada de Zona 3
   
     #define in_PB_Aceptar 0         // Entrada de Pulsador in_PB_Aceptar.
@@ -55,7 +55,6 @@
     volatile bool flag_ISR_temporizador_3=false;        // pra actualizar los dato al servidor.
     volatile bool flag_ISR_temporizador_0=false;
   //-3.2 Variables Globales para Las Funciones.
-    //********************************************************
     String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
@@ -196,6 +195,7 @@
     ICACHE_RAM_ATTR void ISR_0(){
       flag_ISR_prueba=true;
       Zonas=0;
+
     }
     ICACHE_RAM_ATTR void ISR_1(){
       
@@ -337,20 +337,20 @@ void loop(){
       }
     //-4.3 F- Timer 1.
       if(flag_ISR_temporizador_1){
-      elapseTime_1 = currentTime_1 - beforeTime_1;
-      if(flag_depurar){
-        Serial.print("ET1: ");
-        Serial.println(elapseTime_1);
-        Serial.print("CT1: ");
-        Serial.println(currentTime_1);
-        Serial.print("BT1: ");
-        Serial.println(beforeTime_1);
-      }
-      
-      beforeTime_1 = currentTime_1;
+        elapseTime_1 = currentTime_1 - beforeTime_1;
+        if(flag_depurar){
+          Serial.print("ET1: ");
+          Serial.println(elapseTime_1);
+          Serial.print("CT1: ");
+          Serial.println(currentTime_1);
+          Serial.print("BT1: ");
+          Serial.println(beforeTime_1);
+        }
+        
+        beforeTime_1 = currentTime_1;
 
-      b1();
-      flag_F_responder=true;
+        b1();
+        flag_F_responder=true;
       }
     //-4.4 F- Timer 2.
       if(flag_ISR_temporizador_2){
@@ -713,6 +713,23 @@ void loop(){
         letras="R";
       }
     // Respuesta Automatica al Nodo Siguiente.
+      void b1(){
+        // 1. Destinatario.
+        destination=Nodo_siguiente;                           // Respondo a quien me escribe.
+        // 2. Remitente.
+        //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
+        // 3. Nodos Leidos 1.
+        msg2_Write=Zonas_Estados_2;
+        msg1_Write=Zonas_Estados_1;
+        // 4. Nodos Leidos 2.
+        // 5. Longitud de Bytes de la Cadena incoming.
+        // Este byte lo escribe antes de Enviar el mensaje.
+        // 6. Este byte contiene Informacion del Nodo.
+        Nodo_info=String(nodo_informa, HEX);
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        // 7. Byte Escrito desde recepcion Serial o Predefinido.
+        letras="R";
+      }
     // Maestro Inicia La Comunicacion.
       void b2 (){
         // 1. Destinatario.
@@ -883,6 +900,7 @@ void loop(){
       }
       
     }
+  //-4.2 Secuencia.  
     void secuencia(){
       //_____________Modo NODE_______________________________
 
@@ -951,11 +969,13 @@ void loop(){
         // beforeTime_2 = millis();  // despurar.
         // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+        temporizador_1.attach_ms(cycleTime, ISR_temporizador_2);
       }
       if(localAddress==master      && flag_F_Nodos_Incompletos){
         b0();
       }
     }
+  //-4.3 Sever Update.  
     void serverUpdate(){
       // flag_ISR_temporizador_3=false;
       // if(te_toca==1){
@@ -1034,6 +1054,7 @@ void loop(){
       }
       
     }
+  //-4.4 Actualizar.  
     void actualizar(){
       //Procedimiento
       //1. Borrar estados actulaes de entradas Locales
@@ -1045,12 +1066,15 @@ void loop(){
       
        
       // Aplico la Mascara.
-      Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
-      Zonas_Estados_2=Zona_2_Mascara & incomingMsgId2;
+      // Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
+      // Zonas_Estados_2=Zona_2_Mascara & incomingMsgId2;
 
       //Conservo los mensAjes entrantes.
-      Zonas_Estados_1 |= Zonas_LSB;
-      Zonas_Estados_2 |= Zonas_MSB;
+      // Zonas_Estados_1 |= Zonas_LSB;
+      // Zonas_Estados_2 |= Zonas_MSB;
+
+      Zonas_Estados_1 = Zonas_LSB;
+      Zonas_Estados_2 = Zonas_MSB;
 
 
       bitSet(Nodos_Reconocidos, sender);
