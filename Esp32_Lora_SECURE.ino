@@ -153,7 +153,7 @@
   //-3.4 RFM95 Variables.
       byte        msg1_Write    = 0;       // Habilito bandera del Nodo que envia 
       byte        msg2_Write    = 0;       // Habilito bandera del Nodo que envia
-      byte        localAddress  = 0x01;  // address of this device           a3
+      byte        localAddress  = 0x02;  // address of this device           a3
       byte        destination   = 0x01;   // destination to send to  0xFF;         a4
       // long lastSendTime = 0;        // last send time
       // int interval = 2000;
@@ -241,8 +241,8 @@ void setup(){
   //1. Configuracion de Puertos.
     //1.1 Configuracion de Salidas:
     //1.2 Configuracion de Entradas
-      pinMode(in_Zona_1, INPUT);
-      pinMode(in_Zona_2, INPUT);
+      pinMode(in_Zona_1, INPUT_PULLUP);
+      pinMode(in_Zona_2, INPUT_PULLUP);
       pinMode(Pulsador_der, INPUT);
       pinMode(Pulsador_izq, INPUT);
   //2. Condiciones Iniciales.
@@ -376,6 +376,8 @@ void loop(){
       if(flag_F_updateServer){
         serverUpdate();
       }
+    //-4.7 EJ-  REVISO.
+      reviso();  
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
       if(flag_F_responder){
@@ -497,16 +499,20 @@ void loop(){
         Serial.print("Entradas: ");
         Serial.println(info_1=String(Zonas, BIN));
         //5.
-        Serial.print("Zona A: ");
+        Serial.print("Zona A= bit: ");
         Serial.println(Zona_A);
-        Serial.print("Zona B: ");
+        Serial.print("Zona B= bit: ");
         Serial.println(Zona_B);
+        Serial.print("Zona A Estado: ");
+        Serial.println(Zona_A_ST);
+        Serial.print("Zona B Estado: ");
+        Serial.println(Zona_B_ST);
         //6.
         Serial.print("Pulsadores: ");
         Serial.print(Zona_B_Aceptar);
         Serial.println(Zona_A_Aceptar);
         //7.
-        Serial.print("Letras: ");
+        Serial.print("Codigo: ");
         Serial.println(letras);
         //8.
         Serial.print("tokenTime: ");
@@ -609,6 +615,7 @@ void loop(){
       }
       
   }
+
 //3. Funciones Seleccionadas para Ejecutar.
   //-3.1 Funciones tipo A.
     void a1_Nodo_Destellos (int repeticiones, int tiempo){
@@ -868,6 +875,7 @@ void loop(){
       }
     }
 
+
 //4. Funcion que Revisa estados a ser enviados.
   //-4.1 Estados de Zonas.
     void reviso(){
@@ -1057,24 +1065,26 @@ void loop(){
   //-4.4 Actualizar.  
     void actualizar(){
       //Procedimiento
-      //1. Borrar estados actulaes de entradas Locales
+      // Estado de Zonas Normalmente en Zero 0 y Activas en Uno 1
+      //1. Borrar estados actuales de entradas Locales.
       //1.1 Conservar estados de Entradas de los demas Nodos Aplicando Una and.
-      //2  Actaulizo estados Propios en el mensaje de Salida con una or.
+      //2  Actualizo estados Propios en el mensaje de Salida con una or.
       //ESTADOS DE ZONAS.
       Zonas_MSB=highByte(Zonas);        //incomingMsgId2;
       Zonas_LSB=lowByte(Zonas);         //incomingMsgId1;
       
-       
+      // Mascara todos bit en 1 Uno y Las Zonas locales en Cero 0 
       // Aplico la Mascara.
-      // Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
-      // Zonas_Estados_2=Zona_2_Mascara & incomingMsgId2;
+      Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
+      Zonas_Estados_2=Zona_2_Mascara & incomingMsgId2;
 
       //Conservo los mensAjes entrantes.
-      // Zonas_Estados_1 |= Zonas_LSB;
-      // Zonas_Estados_2 |= Zonas_MSB;
+      Zonas_Estados_1 |= Zonas_LSB;
+      Zonas_Estados_2 |= Zonas_MSB;
 
-      Zonas_Estados_1 = Zonas_LSB;
-      Zonas_Estados_2 = Zonas_MSB;
+      // *SOLO PARA PRUEBAS
+      // Zonas_Estados_1 = Zonas_LSB;
+      // Zonas_Estados_2 = Zonas_MSB;
 
 
       bitSet(Nodos_Reconocidos, sender);
