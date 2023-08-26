@@ -3,6 +3,7 @@
     #include <Ticker.h>
     #include <SPI.h>
     #include "heltec.h"
+    // #include "images.h"
     
 //2. Defflag_F_inicion de Pinout.
   //  Las Etiquetas para los pinout son los que comienzan con GPIO
@@ -10,13 +11,13 @@
   //  NO tomar como referencia las etiquetas D1, D2,D3, ....Dx.
   
   //-2.1 Defflag_F_inicion de etiquetas para las Entradas.
-    #define in_Zona_1     32        // Entrada de Zona 1
-    #define in_Zona_2     33        // Entrada de Zona 2
+    #define Zona_A_in     32        // Entrada de Zona 1
+    #define Zona_B_in     33        // Entrada de Zona 2
     #define in_Zona_3     9         // Entrada de Zona 3
   
-    #define in_PB_Aceptar 0         // Entrada de Pulsador in_PB_Aceptar.
-    #define Pulsador_der  39        //
-    #define Pulsador_izq  38        // 
+    #define in_PB_Aceptar  0         // Entrada de Pulsador in_PB_Aceptar.
+    #define Pulsador_A_in  38        //
+    #define Pulsador_B_in  39        // 
 
   //-2.2 Defflag_F_inicion de etiquetas para las Salidas.
     //********************************************************
@@ -85,9 +86,7 @@
     bool          flag_F_Nodo_Iniciado=false;
     bool          flag_F_Nodo_Ultimo=false;
     bool          flag_F_token=false;               // Se habilita caundo el nodo responde por token
-    bool          Zona_A_Aceptar;
-    bool          Zona_B_Aceptar;
-    bool          Zonas_Aceptadas;
+
   //-3.3 Variables para Logica interna.
 
       byte        master=0xFF;
@@ -101,7 +100,7 @@
       byte        Zonas_Estados_2=0;
       byte        Zona_1_Mascara;
       byte        Zona_2_Mascara;
-      word        Zonas_Mascaras=0;
+      word        Zonas_Mascaras=65535;
       word        Zonas=65535;             // Estado de Zonas Activas.      
       int         Nodo_ultimo;
       int         Nodos = 3;           // Establece Cuantos Nodos Conforman La Red a6.
@@ -110,7 +109,9 @@
       int         Nodos_Reconocidos;
       bool        Zona_A_ST;
       bool        Zona_B_ST;
-
+      bool        Zona_A_Aceptar;
+      bool        Zona_B_Aceptar;
+      bool        Zonas_Aceptadas;
       //************************
       // String Compañeros="0";
       // String Nodo ="1";
@@ -121,6 +122,13 @@
       String      Nodo_info="";
       String      letras="";
       String      info_1="";
+      String      NODO_Name;
+      String      Zona_A_str;
+      String      Zona_B_str;
+
+      String      Zona_A_PB_str;
+      String      Zona_B_PB_str;
+
       int         te_toca=1;           // Prueba para comunicacion continua con el servidor.      
       //************************  
       long        initialTime= 0;
@@ -145,15 +153,15 @@
       long        tokenLast;
       int         fastTime    =   1;
     // Alarmas
-      int         Alarma_in_Zona_1=0;
-      int         Alarma_in_Zona_2=0;
+      int         Alarma_Zona_A_in=0;
+      int         Alarma_Zona_B_in=0;
       int         Alarma_in_Zona_3=0;
     // Eventos
       
   //-3.4 RFM95 Variables.
       byte        msg1_Write    = 0;       // Habilito bandera del Nodo que envia 
       byte        msg2_Write    = 0;       // Habilito bandera del Nodo que envia
-      byte        localAddress  = 0x02;  // address of this device           a3
+      byte        localAddress  = 0xFF;  // address of this device           a3
       byte        destination   = 0x01;   // destination to send to  0xFF;         a4
       // long lastSendTime = 0;        // last send time
       // int interval = 2000;
@@ -241,10 +249,10 @@ void setup(){
   //1. Configuracion de Puertos.
     //1.1 Configuracion de Salidas:
     //1.2 Configuracion de Entradas
-      pinMode(in_Zona_1, INPUT_PULLUP);
-      pinMode(in_Zona_2, INPUT_PULLUP);
-      pinMode(Pulsador_der, INPUT);
-      pinMode(Pulsador_izq, INPUT);
+      pinMode(Zona_A_in, INPUT_PULLUP);
+      pinMode(Zona_B_in, INPUT_PULLUP);
+      pinMode(Pulsador_A_in, INPUT);
+      pinMode(Pulsador_B_in, INPUT);
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
     //-2.2 Valores y Espacios de Variables.
@@ -257,6 +265,12 @@ void setup(){
       Zona_A          = Zona_B - 1;
       incomingMsgId1  = 0x00;
       incomingMsgId2  = 0x00;
+      if(localAddress==255){
+        NODO_Name="MASTER:";
+      }
+      else{
+        NODO_Name="NODO:";
+      }
     // answer time
       // cycleTime      = localAddress * 20;
       
@@ -275,7 +289,7 @@ void setup(){
         Nodo_siguiente=Nodo_primero;
       }
     // Mascara de Zonas.
-      Zonas_Mascaras=65536;
+      Zonas_Mascaras=65535;
       Zonas=0;
       bitClear(Zonas_Mascaras, Zona_A);
       bitClear(Zonas_Mascaras, Zona_B);
@@ -289,10 +303,10 @@ void setup(){
     //-3.2 Interrupciones Habilitadas.
       //****************************
       // attachInterrupt (digitalPinToInterrupt (in_PB_Aceptar), ISR_0, FALLING);  // attach interrupt handler for D2
-      // attachInterrupt (digitalPinToInterrupt (in_Zona_1), ISR_1, FALLING);      // attach interrupt handler for D2
-      // attachInterrupt (digitalPinToInterrupt (in_Zona_2), ISR_2, FALLING);      // attach interrupt handler for D2
-      // attachInterrupt (digitalPinToInterrupt (Pulsador_der), ISR_3, FALLING);      // attach interrupt handler for D2
-      // attachInterrupt (digitalPinToInterrupt (Pulsador_izq), ISR_4, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (Zona_A_in), ISR_1, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (Zona_B_in), ISR_2, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (Pulsador_A_in), ISR_3, FALLING);      // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (Pulsador_B_in), ISR_4, FALLING);      // attach interrupt handler for D2
       
       //interrupts ();
 
@@ -303,7 +317,18 @@ void setup(){
   //5. Configuracion de DEVICE externos.
     //-5.1 WIFI ESP32 LORA Configuracion.
       Heltec.begin(true /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, RFM95_FREQ /*long BAND*/);
-      //****************************   
+    //-5.2 OLED Display.
+      // Heltec.display->init();
+      // Heltec.display->flipScreenVertically();        // Invierte el Orden de La LCD
+      // Heltec.display->setFont(ArialMT_Plain_10);
+      // delay(1500);
+      // Heltec.display->clear();
+
+      // Heltec.display->drawString(0, 0, "Heltec.LoRa Initial success!");
+      Heltec.display->drawString(0, 10, "Wait for incoming data...");
+      Heltec.display->display();
+      delay(1000);
+
 }
 void loop(){
   //1. Bienvenida Funcion
@@ -323,18 +348,15 @@ void loop(){
         inputString="";
       }
   //4. Atender Las fucniones activadas desde ISR FLAGS.
-    //-4.1 Bandera de Prueba.
+    //-4.0 Bandera de Prueba.
       if(flag_ISR_prueba){
       // flag_ISR_prueba=false;
         // a1_Nodo_Destellos(1,3);
       }
-    //-4.2 F- Recepcion de Paquete.
-      if(flag_F_PAQUETE){
-        flag_F_PAQUETE=false;
-        actualizar();
-        serverUpdate();
-        secuencia();
-      }
+    //-4.1 EJ-  REVISO Y ACTUALIZO.
+      reviso();
+      actualizar();  
+
     //-4.3 F- Timer 1.
       if(flag_ISR_temporizador_1){
         elapseTime_1 = currentTime_1 - beforeTime_1;
@@ -376,8 +398,12 @@ void loop(){
       if(flag_F_updateServer){
         serverUpdate();
       }
-    //-4.7 EJ-  REVISO.
-      reviso();  
+    //-4.7 F- Recepcion de Paquete.
+      if(flag_F_PAQUETE){
+        flag_F_PAQUETE=false;
+
+        secuencia();
+      }
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
       if(flag_F_responder){
@@ -388,13 +414,19 @@ void loop(){
 }
 //1. Funciones de Logic interna del Micro.
   void welcome(){
-  // Deshabilitamos Banderas
     flag_F_inicio=false;
     if(flag_depurar){
       Serial.println("Sistema Iniciado");
       Serial.print("Direccion: ");
       Serial.println(localAddress);
     }
+    info_1=String(Zonas, BIN);
+    Heltec.display->drawString(0, 20, "ZA");
+    Heltec.display->drawString(0, 30, "ZB");
+    Heltec.display->drawString(0, 40, "PA");
+    Heltec.display->drawString(0, 50, "PB");
+    Heltec.display->display();
+    delay(500);
   }
   void led_Monitor(int repeticiones){
     // Deshabilitamos Banderas
@@ -427,7 +459,6 @@ void loop(){
   }
 //2. Gestiona las funciones a Ejecutar.
   void ejecutar_solicitud(){
-    // Deshabilitamos Banderas
       x1=funtion_Parmeter1.toInt();
       x2=funtion_Parmeter2.toInt();
       x3=funtion_Parmeter3.toInt();
@@ -732,7 +763,7 @@ void loop(){
         // 5. Longitud de Bytes de la Cadena incoming.
         // Este byte lo escribe antes de Enviar el mensaje.
         // 6. Este byte contiene Informacion del Nodo.
-        Nodo_info=String(nodo_informa, HEX);
+        // Nodo_info=String(nodo_informa, HEX);
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         letras="R";
@@ -876,15 +907,15 @@ void loop(){
     }
 
 
-//4. Funcion que Revisa estados a ser enviados.
+//4. Funciones UPDATE.
   //-4.1 Estados de Zonas.
     void reviso(){
+      if(localAddress==255) return;
+      Zona_A_Aceptar=digitalRead(Pulsador_A_in);
+      Zona_B_Aceptar=digitalRead(Pulsador_B_in);
 
-      Zona_A_Aceptar=digitalRead(Pulsador_der);
-      Zona_B_Aceptar=digitalRead(Pulsador_izq);
-
-      Zona_A_ST=digitalRead(in_Zona_1);
-      Zona_B_ST=digitalRead(in_Zona_2);
+      Zona_A_ST=digitalRead(Zona_A_in);
+      Zona_B_ST=digitalRead(Zona_B_in);
 
       Zonas_Aceptadas=digitalRead(in_PB_Aceptar);
       // Pulsadores
@@ -906,7 +937,11 @@ void loop(){
       if(!Zona_B_ST){
         bitSet(Zonas, Zona_B);
       }
-      
+        Zona_A_str=String(Zona_A_ST, BIN);
+        Zona_B_str=String(Zona_B_ST, BIN);
+
+        Zona_A_PB_str=String(Zona_A_Aceptar, BIN);
+        Zona_B_PB_str=String(Zona_B_Aceptar, BIN);
     }
   //-4.2 Secuencia.  
     void secuencia(){
@@ -985,6 +1020,7 @@ void loop(){
     }
   //-4.3 Sever Update.  
     void serverUpdate(){
+      flag_F_updateServer=false;
       // flag_ISR_temporizador_3=false;
       // if(te_toca==1){
       //   Serial.println("SEC,NOK,1,A");
@@ -1002,62 +1038,60 @@ void loop(){
       //   te_toca=0;
       //   Serial.println("SEC,ALL,0,0");
       // }
-      if(incomingMsgId1==0){
+      if(Zonas_Estados_1==0){
         Serial.println("SEC,ALL,0,0");
         return;
       }
-      if(bitRead(incomingMsgId1, P1ZA)){
+      if(bitRead(Zonas_Estados_1, P1ZA)){
         Serial.println("SEC,NOK,1,A");
       }
-      if(bitRead(incomingMsgId1, P1ZB)){
+      if(bitRead(Zonas_Estados_1, P1ZB)){
         Serial.println("SEC,NOK,1,B");
       }
-      if(!bitRead(incomingMsgId1, P1ZA)){
+      if(!bitRead(Zonas_Estados_1, P1ZA)){
         Serial.println("SEC,BOK,1,A");
       }
-      if(!bitRead(incomingMsgId1, P1ZB)){
+      if(!bitRead(Zonas_Estados_1, P1ZB)){
         Serial.println("SEC,BOK,1,B");
       }
 
 
-      if(bitRead(incomingMsgId1, P2ZA)){
+      if(bitRead(Zonas_Estados_1, P2ZA)){
         Serial.println("SEC,NOK,2,A");
       }
-      if(bitRead(incomingMsgId1, P2ZB)){
+      if(bitRead(Zonas_Estados_1, P2ZB)){
         Serial.println("SEC,NOK,2,B");
       }
-      if(!bitRead(incomingMsgId1, P2ZA)){
+      if(!bitRead(Zonas_Estados_1, P2ZA)){
         Serial.println("SEC,BOK,2,A");
       }
-      if(!bitRead(incomingMsgId1, P2ZB)){
+      if(!bitRead(Zonas_Estados_1, P2ZB)){
         Serial.println("SEC,BOK,2,B");
       }
 
 
-      if(bitRead(incomingMsgId1, P3ZA)){
+      if(bitRead(Zonas_Estados_1, P3ZA)){
         Serial.println("SEC,NOK,3,A");
       }
-      if(bitRead(incomingMsgId1, P3ZB)){
+      if(bitRead(Zonas_Estados_1, P3ZB)){
         Serial.println("SEC,NOK,3,B");
       }
-      if(!bitRead(incomingMsgId1, P3ZA)){
+      if(!bitRead(Zonas_Estados_1, P3ZA)){
         Serial.println("SEC,BOK,3,A");
       }
-      if(!bitRead(incomingMsgId1, P3ZB)){
+      if(!bitRead(Zonas_Estados_1, P3ZB)){
         Serial.println("SEC,BOK,3,B");
       }
-
-
-      if(bitRead(incomingMsgId1, P4ZA)){
+      if(bitRead(Zonas_Estados_1, P4ZA)){
         Serial.println("SEC,NOK,4,A");
       }
-      if(bitRead(incomingMsgId1, P4ZB)){
+      if(bitRead(Zonas_Estados_1, P4ZB)){
         Serial.println("SEC,NOK,4,B");
       }
-      if(!bitRead(incomingMsgId1, P4ZA)){
+      if(!bitRead(Zonas_Estados_1, P4ZA)){
         Serial.println("SEC,BOK,4,A");
       }
-      if(!bitRead(incomingMsgId1, P4ZB)){
+      if(!bitRead(Zonas_Estados_1, P4ZB)){
         Serial.println("SEC,BOK,4,B");
       }
       
@@ -1073,18 +1107,65 @@ void loop(){
       Zonas_MSB=highByte(Zonas);        //incomingMsgId2;
       Zonas_LSB=lowByte(Zonas);         //incomingMsgId1;
       
-      // Mascara todos bit en 1 Uno y Las Zonas locales en Cero 0 
+      // Mascara: Todos los bits en 1 Uno y Las Zonas locales en Cero 0 
       // Aplico la Mascara.
       Zonas_Estados_1=Zona_1_Mascara & incomingMsgId1;
       Zonas_Estados_2=Zona_2_Mascara & incomingMsgId2;
 
-      //Conservo los mensAjes entrantes.
+      //Conservo el esado de de los Bits entrantes.
       Zonas_Estados_1 |= Zonas_LSB;
       Zonas_Estados_2 |= Zonas_MSB;
+      
+      msg1_Write=Zonas_Estados_1;
+      msg2_Write=Zonas_Estados_2;
 
       // *SOLO PARA PRUEBAS
       // Zonas_Estados_1 = Zonas_LSB;
       // Zonas_Estados_2 = Zonas_MSB;
+        
+        
+
+
+        //7.
+        // Serial.print("Codigo: ");
+        // Serial.println(letras);
+
+        // LIMPIO PANTALLA
+        Heltec.display->clear();
+
+        // NODO INFORMACION
+        Heltec.display->drawString(0, 0, NODO_Name);
+        Heltec.display->drawString(50, 0, String(localAddress, DEC));
+        Heltec.display->drawString(80, 0, "RX:");
+        Heltec.display->drawString(97, 0, String(sender, DEC));
+        // ZONAS MENSAJE ENTRANTE
+        Heltec.display->drawString(0, 10, "ZONAS:");
+        Heltec.display->drawString(50, 10, "123456789");
+        Heltec.display->drawString(0, 20, "ST:");
+        Heltec.display->drawString(50, 20, String(incomingMsgId1, BIN));
+        // ZONA LOCAL
+        Heltec.display->drawString(0, 30, "LOCAL:");
+        Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
+        // INTEGRACION.
+        Heltec.display->drawString(0, 40, "SUMA:");
+        Heltec.display->drawString(50,40, String(Zonas_Estados_1, BIN));
+        // ZONA A
+        Heltec.display->drawString(0, 50, "ZA:");
+        Heltec.display->drawString(16, 50, Zona_A_str);
+        // ZONA B
+        Heltec.display->drawString(25, 50, "ZB:");
+        Heltec.display->drawString(41, 50, Zona_B_str);
+        // PULSADOR A
+        Heltec.display->drawString(55, 50, "PA:");
+        Heltec.display->drawString(72, 50, Zona_B_PB_str);
+        // PULSADOR B
+        Heltec.display->drawString(85, 50, "PB:");
+        Heltec.display->drawString(101, 50, Zona_A_PB_str);
+        // MOSTAR
+        Heltec.display->display();
+        delay(100);
+        
+
 
 
       bitSet(Nodos_Reconocidos, sender);
@@ -1142,6 +1223,7 @@ void loop(){
       inputString=incoming;
       falg_ISR_stringComplete=true;
       flag_F_PAQUETE=true;
+      flag_F_updateServer=true;
       if(inputString.endsWith("R")){
         flag_F_responder=false;
       }
@@ -1170,7 +1252,9 @@ void loop(){
       flag_F_Nodo_Iniciado=true;
       sender=0;
       recipient=0;
-
+        Heltec.display->drawString(117, 0, "*");
+        Heltec.display->display();
+        delay(300);
     }
     // Arregalr el mensaje que se envia en la cadena letras, que sea de 3 letras mas la R al final    
     // Mejorar el mensaje de las entradas digitales, 
