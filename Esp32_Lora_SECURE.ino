@@ -60,7 +60,8 @@
     String        funtion_Parmeter1;     // Parametro 1 de la Funcion.
     String        funtion_Parmeter2;     // Parametro 2 de la Funcion.
     String        funtion_Parmeter3;     // Parametro 3 de la Funcion.
-    
+    String        function_Remote;
+
     volatile int  x1=0;
     volatile int  x2=0;
     volatile int  x3=0;
@@ -98,7 +99,8 @@
       int         Nodos_Reconocidos;
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       String      NODO_Name;
-
+      byte        nodosLSB;            // variable para igualar el dato de los nodos reportados
+      byte        nodosMSB;
 
       byte        Zonas_MSB=0;
       byte        Zonas_LSB=0;
@@ -223,7 +225,7 @@
     ICACHE_RAM_ATTR void ISR_4(){
       bitClear(Zonas, Zona_B);
     }
-  //-5.3 Interrupciones por Timer 1.
+  //-5.3 Interrupciones por Timers.
     void ISR_temporizador_0(){
       flag_ISR_temporizador_0=true;
       if(flag_F_Nodos_Incompletos){
@@ -441,6 +443,7 @@ void loop(){
       delay(500);                    // pausa 1 seg.
     }
   }
+//2. Gestiona las funciones a Ejecutar.
   void decodificar_solicitud(){
     //Deshabilitamos Banderas
     falg_ISR_stringComplete=false;
@@ -459,8 +462,7 @@ void loop(){
       Serial.println("Parametro2: " + funtion_Parmeter2);
       Serial.println("Parametro3: " + funtion_Parmeter3+ "\n");
     }
-  }
-//2. Gestiona las funciones a Ejecutar.
+  }  
   void ejecutar_solicitud(){
       x1=funtion_Parmeter1.toInt();
       x2=funtion_Parmeter2.toInt();
@@ -609,16 +611,17 @@ void loop(){
           Serial.println("funion B Nº7");
         }
         flag_F_masterNodo=true;
-        codigo=inputString.substring(2);
-        Nodo_destino=x1;
-        secuencia();
+        flag_F_PAQUETE=true;
+        function_Remote=inputString.substring(2);   // Extraemos la Funcion a Enviar de la Cadena.
+        Nodo_destino=x1;                            // Nodo a quien queremos enviar
+
       }
       if (funtion_Mode=="B" && funtion_Number=="8"){
         if(flag_F_depurar){
           Serial.println("funion B Nº8");
         }
         flag_F_nodoRequest=true;
-        secuencia();
+        flag_F_PAQUETE=true;
       }     
       if (funtion_Mode=="B" && funtion_Number=="9"){
         if(flag_F_depurar){
@@ -626,7 +629,7 @@ void loop(){
         }
         flag_F_masteRequest=true;
         codigo=inputString.substring(2);
-        secuencia();
+        flag_F_PAQUETE=true;
       }     
       if (funtion_Mode=="B" && funtion_Number=="0"){
         if(flag_F_depurar){
@@ -884,7 +887,7 @@ void loop(){
         // nodoInfo=String(msgNumber, HEX);
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
-        codigo="OK";   //Question solicitd.
+        codigo=function_Remote;   //Question solicitd.
       }
       void b8 (int a1, int a2){
         int aa=a1;
@@ -1163,6 +1166,10 @@ void loop(){
         if(incoming_sender==Nodos){
           flag_F_Nodo_Ultimo=true;
         }
+    }
+  //-4.5 Analizar.
+    void analizar(){
+      //
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
