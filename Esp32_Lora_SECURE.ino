@@ -13,7 +13,7 @@
   //-2.1 Definicion de etiquetas para las Entradas.
     #define Zona_A_in     32        // Entrada de Zona 1
     #define Zona_B_in     33        // Entrada de Zona 2
-    #define Entrada_X1_in     9         // Entrada Digital.
+    #define Entrada_X1_in 9         // Entrada Digital.
   
     #define PB_zonas_in   0         // Entrada de Pulsador PB_zonas_in.
     #define PB_ZA_in      38        //
@@ -69,13 +69,14 @@
     bool          flag_F_Un_segundo=false;         // Se activa cuando Pasa un Segundo por Interrupcion.
     bool          flag_F_inicio=true;              // Habilitar mensaje de flag_F_inicio por unica vez
     bool          flag_F_responder=false;          // Se activa cuando recibe un mensaje para luego responder.
-    bool          flag_F_modo_Continuo;
-    bool          flag_F_depurar=true;
+    bool          flag_F_modo_Continuo=false;
+    bool          flag_F_depurar=false;
     bool          flag_F_once=true;
     bool          flag_F_updateServer=false;
     bool          flag_F_respondido=false;
     bool          flag_F_masteRequest=false;
     bool          flag_F_nodoRequest=false;
+    bool          flag_F_masterNodo=false;          // Habilitada para solicitar informacion a un Nodo Especifico    
     bool          flag_F_PAQUETE=false;
     bool          flag_F_tokenTime=false;
     bool          flag_F_cycleTime=false;
@@ -93,6 +94,7 @@
       byte        Nodo_actual=0;
       int         Nodo_ultimo;
       byte        Nodo_primero=1;
+      byte        Nodo_destino;
       int         Nodos_Reconocidos;
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       String      NODO_Name;
@@ -106,7 +108,9 @@
       byte        Zonas_MSB_Mascara;
       word        Zonas_Mascaras=65535;
       word        Zonas=65535;             // Estado de Zonas Activas.      
-      
+      int         Zonas_LSB_str=8;
+      int         Zonas_MSB_str=8;
+
       int         Zona_A;
       int         Zona_B;
       bool        Zona_A_ST;
@@ -167,7 +171,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF;  // address of this device           a3
+      byte        localAddress  = 0x01;  // address of this device           a3
       byte        nodoInfo;         // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -557,7 +561,7 @@ void loop(){
         Serial.println(masterTime);
       }
       if (funtion_Mode=="A" && funtion_Number=="9"){
-        // Serial.println(codigo);
+        ESP.restart();
       }
       if (funtion_Mode=="A" && funtion_Number=="0"){
         // sIN PROGRAMAR.
@@ -604,7 +608,10 @@ void loop(){
         if(flag_F_depurar){
           Serial.println("funion B Nº7");
         }
-        b7();
+        flag_F_masterNodo=true;
+        codigo=inputString.substring(2);
+        Nodo_destino=x1;
+        secuencia();
       }
       if (funtion_Mode=="B" && funtion_Number=="8"){
         if(flag_F_depurar){
@@ -859,10 +866,11 @@ void loop(){
           codigo="Tc";
         }
       }
+    // Respuesta a Comandos del Maestro.  
       void b7 (){
         // Informacion Acerca de los nodos que pude LEER.
         // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-        destination=Nodo_primero;                           // Respondo a quien me escribe.
+        destination=Nodo_destino;                           // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
         // 3. Nodos Leidos 1.
@@ -983,8 +991,8 @@ void loop(){
       
       // Modo Particular
       if(incoming_recipient==localAddress   && incoming_sender==master){
-        temporizador_2.once_ms(fastTime, ISR_temporizador_2);
         b3();
+        temporizador_2.once_ms(fastTime, ISR_temporizador_2);
       }
       // Modo NODO  >> PRINCIPAL.
       if(localAddress==Nodo_actual && flag_F_nodoRequest){
@@ -1007,9 +1015,15 @@ void loop(){
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_2);
       }
+      if(localAddress==master     && flag_F_masterNodo){
+        b7();
+        flag_F_masterNodo=false;
+        temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+      }
       if(localAddress==master      && flag_F_Nodos_Incompletos){
         b0();
       }
+
     }
   //-4.3 Sever Update.  
     void serverUpdate(){
@@ -1094,6 +1108,10 @@ void loop(){
       
         zonesLSB=Zonas_LSB_Estados;
         zonesMSB=Zonas_MSB_Estados;
+        
+        Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
+        Zonas_LSB_str |=zonesLSB;
+
       // Pantalla.
         // LIMPIO PANTALLA
           Heltec.display->clear();
@@ -1104,15 +1122,16 @@ void loop(){
           Heltec.display->drawString(97, 0, String(incoming_sender, DEC));
         // ZONAS MENSAJE ENTRANTE
           Heltec.display->drawString(0, 10, "ZONAS:");
-          Heltec.display->drawString(50, 10, "123456789");
-          Heltec.display->drawString(0, 20, "ST:");
-          Heltec.display->drawString(50, 20, String(incoming_zonesLSB, BIN));
+          Heltec.display->drawString(50, 10, "87654321");
+          Heltec.display->drawString(0, 20, "SUMA:");
+          Heltec.display->drawString(45, 20, String(Zonas_LSB_str, BIN));
+          Heltec.display->drawString(45, 20, "#");
         // ZONA LOCAL
           Heltec.display->drawString(0, 30, "LOCAL:");
           Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
         // INTEGRACION.
-          Heltec.display->drawString(0, 40, "SUMA:");
-          Heltec.display->drawString(50,40, String(Zonas_LSB_Estados, BIN));
+          Heltec.display->drawString(0, 40, "ST:");
+          Heltec.display->drawString(50,40, String(incoming_zonesLSB, BIN));
         // ZONA A
           Heltec.display->drawString(0, 50, "ZA:");
           Heltec.display->drawString(16, 50, Zona_A_str);
