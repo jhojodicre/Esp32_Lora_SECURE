@@ -60,11 +60,13 @@
     String        funtion_Parmeter1;     // Parametro 1 de la Funcion.
     String        funtion_Parmeter2;     // Parametro 2 de la Funcion.
     String        funtion_Parmeter3;     // Parametro 3 de la Funcion.
+    String        funtion_Parmeter4;      // Parametro para las Funciones remotas.
     String        function_Remote;
-
+    String        function_Enable;
     volatile int  x1=0;
     volatile int  x2=0;
     volatile int  x3=0;
+    volatile int  x4=0;
 
     bool          flag_F_codified_funtion=false;   // Notifica que la funcion ha sido codificada.
     bool          flag_F_Un_segundo=false;         // Se activa cuando Pasa un Segundo por Interrupcion.
@@ -98,9 +100,9 @@
       byte        Nodo_destino;
       int         Nodos_Reconocidos;
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
-      String      NODO_Name;
-      byte        nodosLSB;            // variable para igualar el dato de los nodos reportados
-      byte        nodosMSB;
+      String      Nodo_Name;
+      byte        nodos_LSB;            // variable para igualar el dato de los nodos reportados
+      byte        nodos_MSB;
 
       byte        Zonas_MSB=0;
       byte        Zonas_LSB=0;
@@ -273,10 +275,10 @@ void setup(){
       incoming_zonesLSB  = 0x00;
       incoming_zonesMSB  = 0x00;
       if(localAddress==255){
-        NODO_Name="MASTER:";
+        Nodo_Name="MASTER:";
       }
       else{
-        NODO_Name="NODO:";
+        Nodo_Name="NODO:";
       }
     //-2.3 Timer Answer.
       // cycleTime      = localAddress * 20;
@@ -286,6 +288,7 @@ void setup(){
       wakeUpTime      = tokenTime*localAddress;
       cycleTime       = tokenTime*Nodos;
       masterTime      = cycleTime*2;
+      tokenFirst      = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
       if(localAddress==Nodo_primero){
         tokenTime=2000;
         Nodo_anterior=Nodo_ultimo;
@@ -453,6 +456,7 @@ void loop(){
     funtion_Parmeter1=inputString.substring(2,3);
     funtion_Parmeter2=inputString.substring(3,4);
     funtion_Parmeter3=inputString.substring(4,5);
+    funtion_Parmeter4=inputString.substring(5,6);
 
     if(flag_F_depurar){
       Serial.println(inputString);         // Pureba de Comunicacion Serial.
@@ -467,6 +471,7 @@ void loop(){
       x1=funtion_Parmeter1.toInt();
       x2=funtion_Parmeter2.toInt();
       x3=funtion_Parmeter3.toInt();
+      x4=funtion_Parmeter4.toInt();
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
         if(flag_F_depurar){
@@ -503,7 +508,8 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="5"){
         if(flag_F_depurar){
-          Serial.println("funion A Nº5");
+          Serial.println("funion A Nº5: Modo Continuo");
+          a5_Nodo_Modo_Continuo(x1);
         }
       }
       if (funtion_Mode=="A" && funtion_Number=="6"){
@@ -516,9 +522,9 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="7"){
         if(flag_F_depurar){
-          Serial.println("funion A Nº7");
+          Serial.println("funion A Nº7 Modo Depurar");
         }
-        a7(x1,x2);
+        a7(x1);
       }
       if (funtion_Mode=="A" && funtion_Number=="8"){
         Serial.println("funion A Nº8 Status");
@@ -612,9 +618,8 @@ void loop(){
         }
         flag_F_masterNodo=true;
         flag_F_PAQUETE=true;
-        function_Remote=inputString.substring(2);   // Extraemos la Funcion a Enviar de la Cadena.
-        Nodo_destino=x1;                            // Nodo a quien queremos enviar
-
+        function_Remote=inputString.substring(3);   // Extraemos la Funcion a Enviar de la Cadena.
+        Nodo_destino=x1;
       }
       if (funtion_Mode=="B" && funtion_Number=="8"){
         if(flag_F_depurar){
@@ -698,26 +703,27 @@ void loop(){
       Serial.println(destination);
       
     }
-    void a5_Nodo_Mensaje_ID(){      
-      msgNumber++;                           // increment message ID.
-    }
-    void a6_Nodo_Numeros(int parametro_1){
-      Nodos=parametro_1;  
-    }
-    void a7(int tipo_Modo, int tipo_Depurar){
+    void a5_Nodo_Modo_Continuo(int tipo_Modo){      
       int a=tipo_Modo;
-      int b=tipo_Depurar;
       if(a==1){
         beforeTime_1 = millis();
         flag_F_modo_Continuo=true;
         temporizador_1.attach_ms(500, ISR_temporizador_1);
-        secuencia();
+        flag_F_PAQUETE=true;
       }
       if(a==0){
         flag_F_modo_Continuo=false;
         flag_F_responder=false;
         temporizador_1.detach();
       }
+    }
+    void a6_Nodo_Numeros(int parametro_1){
+      Nodos=parametro_1;  
+    }
+    void a7(int tipo_Depurar){
+      
+      int b=tipo_Depurar;
+
       if(b==1){
         flag_F_depurar=1;
       }
@@ -947,16 +953,9 @@ void loop(){
         Zona_A_PB_str=String(Zona_A_Aceptada, BIN);
         Zona_B_PB_str=String(Zona_B_Aceptada, BIN);
     }
-  //-4.2 Secuencia.  
+  //-4.2 Secuencia.
     void secuencia(){
       //_____________Modo NODE_______________________________
-
-      // Modo NODO  PRIMERO>> NODO SIGUIENTE.
-      // if(incoming_recipient==localAddress   && incoming_sender==Nodo_ultimo){
-      //   b6();
-      //   temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-      // }
-      // Modo NODO MAYORES A UNO
       if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
         b6();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
@@ -966,25 +965,16 @@ void loop(){
         beforeTime_2 = millis();  // despurar.
         beforeTime_1 = millis();  // despurar.
       }
-      // Modo NODO ULTIMO >> NODO PRIMERO.
-      // if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior && flag_F_Nodo_Ultimo){
-      //   b7();
-      //   Nodo_ultimo=false;
-      //   temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-      //   beforeTime_2 = millis();  // despurar.
-      // }      
-      
-      
       // Modo MASTER Broadcast.
       if(incoming_recipient==0              && incoming_sender==master){
         b6();
         flag_F_Nodo_Iniciado=true;
-        beforeTime_2 = millis();  // despurar.
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        beforeTime_1 = millis();  // despurar.
+        temporizador_2.once_ms(tokenFirst, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+        beforeTime_2 = millis();  // despurar.
+        beforeTime_1 = millis();  // despurar.
       }
-      // Modo MASTER >> PARTICVULAR si el master quiere saber: a quien puede escuchar.
+      // Modo MASTER >> PARTICULAR si el master quiere saber: a quien puede escuchar.
       if(incoming_recipient==254            && incoming_sender==master && flag_F_Nodo_Iniciado==false){
         b6();
         temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
@@ -998,32 +988,32 @@ void loop(){
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
       }
       // Modo NODO  >> PRINCIPAL.
-      if(localAddress==Nodo_actual && flag_F_nodoRequest){
+      if(localAddress==Nodo_actual          && flag_F_nodoRequest){
         b6();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
       } 
       // Modo NODOD >> BROADCAST CONTINUO (Prueba).
-      if(flag_F_modo_Continuo      && flag_ISR_temporizador_1){
+      if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
           b3();
       }
       
       
       //_____________Modo MASTER__________________________
       // Modo MASTRER Principal (INICA LA TRANSMISION)
-      if(localAddress==master      && flag_F_masteRequest){
+      if(localAddress==master             && flag_F_masteRequest){
         b2();   //destination=0
         // beforeTime_2 = millis();  // despurar.
         // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_2);
       }
-      if(localAddress==master     && flag_F_masterNodo){
+      if(localAddress==master             && flag_F_masterNodo){
         b7();
         flag_F_masterNodo=false;
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
       }
-      if(localAddress==master      && flag_F_Nodos_Incompletos){
+      if(localAddress==master             && flag_F_Nodos_Incompletos){
         b0();
       }
 
@@ -1119,7 +1109,7 @@ void loop(){
         // LIMPIO PANTALLA
           Heltec.display->clear();
         // NODO INFORMACION
-          Heltec.display->drawString(0, 0, NODO_Name);
+          Heltec.display->drawString(0, 0, Nodo_Name);
           Heltec.display->drawString(50, 0, String(localAddress, DEC));
           Heltec.display->drawString(80, 0, "RX:");
           Heltec.display->drawString(97, 0, String(incoming_sender, DEC));
