@@ -150,7 +150,7 @@
       long        tokenTime  = 2000;
       long        updateTime = 2000;
       long        masterTime = 10000;
-      long        wakeUpTime ;
+      float       wakeUpTime = 90.0;
       long        tokenFirst;
       long        tokenLast;
       int         fastTime    =   1;
@@ -251,8 +251,9 @@
       flag_F_token=true;
     }
     void ISR_temporizador_3(){
+      if(flag_F_Nodo_Iniciado) return;
       flag_ISR_temporizador_3=true;
-      ++te_toca;
+      b6();
     }
 void setup(){
   //1. Configuracion de Puertos.
@@ -289,6 +290,7 @@ void setup(){
       cycleTime       = tokenTime*Nodos;
       masterTime      = cycleTime*2;
       tokenFirst      = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
+      wakeUpTime      = 90.0;
       if(localAddress==Nodo_primero){
         tokenTime=2000;
         Nodo_anterior=Nodo_ultimo;
@@ -298,6 +300,8 @@ void setup(){
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
+    // Timer 3 Responde despues de Reiniciar sin Recibir respuesta.
+      temporizador_3.once(wakeUpTime, ISR_temporizador_3);
     //-2.4 Mascara de Zonas.
       Zonas_Mascaras=65535;
       Zonas=0;
@@ -403,11 +407,15 @@ void loop(){
       if(flag_ISR_temporizador_0){
       flag_F_responder=true;
       }
-    //-4.5 F- Server Update.
+    //-4.5 F- Timer 3.
+      if(flag_ISR_temporizador_3){
+      flag_F_responder=true;
+      }
+    //-4.6 F- Server Update.
       if(flag_F_updateServer){
         serverUpdate();
       }
-    //-4.6 F- Recepcion de Paquete.
+    //-4.7 F- Recepcion de Paquete.
       if(flag_F_PAQUETE){
         flag_F_PAQUETE=false;
         secuencia();
@@ -870,9 +878,14 @@ void loop(){
         // nodoInfo=String(msgNumber, HEX);
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
-        codigo="Tt";   //Question solicitd.
         if(flag_ISR_temporizador_1){
-          codigo="Tc";
+          codigo="T2";
+        }
+        if(flag_ISR_temporizador_1){
+          codigo="T1";
+        }
+        if(flag_ISR_temporizador_1){
+          codigo="T3";
         }
       }
     // Respuesta a Comandos del Maestro.  
@@ -1230,6 +1243,7 @@ void loop(){
       // FLAG ACKNOWLEDGE
       flag_ISR_temporizador_2=false;  // se habilita en el ISR del temporiador 2
       flag_ISR_temporizador_1=false;
+      flag_ISR_temporizador_0=false;
       flag_ISR_temporizador_0=false;
       
       flag_F_masteRequest=false;
