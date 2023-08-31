@@ -1143,6 +1143,11 @@ void loop(){
         
 
 
+
+    }
+  //-4.5 Analizar.
+    void analizar(){
+      //
       // EVENTOS
         bitSet(Nodos_Reconocidos, incoming_sender);
         if(Nodos_Reconocidos==7){
@@ -1156,10 +1161,6 @@ void loop(){
         if(incoming_sender==Nodos){
           flag_F_Nodo_Ultimo=true;
         }
-    }
-  //-4.5 Analizar.
-    void analizar(){
-      //
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
