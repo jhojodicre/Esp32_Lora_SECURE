@@ -53,7 +53,7 @@
     volatile bool flag_ISR_temporizador_2=false;
     volatile bool flag_ISR_temporizador_3=false;        // pra actualizar los dato al servidor.
     volatile bool flag_ISR_temporizador_0=false;
-  //-3.2 Variables Globales para Las Funciones.
+  
     String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
@@ -67,13 +67,13 @@
     volatile int  x2=0;
     volatile int  x3=0;
     volatile int  x4=0;
-
+  //-3.2 Variables Globales para Las Funciones.
     bool          flag_F_codified_funtion=false;   // Notifica que la funcion ha sido codificada.
     bool          flag_F_Un_segundo=false;         // Se activa cuando Pasa un Segundo por Interrupcion.
     bool          flag_F_inicio=true;              // Habilitar mensaje de flag_F_inicio por unica vez
     bool          flag_F_responder=false;          // Se activa cuando recibe un mensaje para luego responder.
     bool          flag_F_modo_Continuo=false;
-    bool          flag_F_depurar=false;
+    bool          flag_F_depurar=true;
     bool          flag_F_once=true;
     bool          flag_F_updateServer=false;
     bool          flag_F_respondido=false;
@@ -99,9 +99,10 @@
       byte        Nodo_primero=1;
       byte        Nodo_destino;
       word        Nodos_LSB_ACK;
+      int         Nodos_LSB_str;
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       String      Nodo_Name;
-      byte        nodos_LSB;            // variable para igualar el dato de los nodos reportados
+      byte        nodos_LSB;           // variable para igualar el dato de los nodos reportados
       byte        nodos_MSB;
 
       byte        Zonas_MSB=0;
@@ -175,7 +176,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x01;  // address of this device           a3
+      byte        localAddress  = 0xFF;  // address of this device           a3
       byte        nodoInfo;         // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -229,22 +230,20 @@
     }
   //-5.3 Interrupciones por Timers.
     void ISR_temporizador_0(){
-      flag_ISR_temporizador_0=true;
-      if(flag_F_Nodos_Incompletos){
-        secuencia();
-      }
+      // flag_ISR_temporizador_0=true;
+      // if(flag_F_Nodos_Incompletos){
+      //   analisar();
+      // }
     }
     void ISR_temporizador_1(){
         currentTime_1 = millis();
-        flag_F_Analizar=ture;
+        flag_F_analizar=true;
         if(flag_F_token){
           flag_F_token=false;
           return;
         }
-        
         flag_ISR_temporizador_1=true;
         b6();
-        
     }
     void ISR_temporizador_2(){
       currentTime_2 = millis();
@@ -276,6 +275,7 @@ void setup(){
       Zona_A          = Zona_B - 1;
       incoming_zonesLSB  = 0x00;
       incoming_zonesMSB  = 0x00;
+      
       if(localAddress==255){
         Nodo_Name="MASTER:";
       }
@@ -301,8 +301,11 @@ void setup(){
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
-    // Timer 3 Responde despues de Reiniciar sin Recibir respuesta.
-      temporizador_3.once(wakeUpTime, ISR_temporizador_3);
+      // Timer 3 Responde despues de Reiniciar sin Recibir respuesta.
+      if(localAddress<255){
+        temporizador_3.once(wakeUpTime, ISR_temporizador_3);
+      }
+      
     //-2.4 Mascara de Zonas.
       Zonas_Mascaras=65535;
       Zonas=0;
@@ -382,10 +385,7 @@ void loop(){
           Serial.print("BT1: ");
           Serial.println(beforeTime_1);
         }
-        
         beforeTime_1 = currentTime_1;
-
-        b1();
         flag_F_responder=true;
       }
     //-4.3 F- Timer 2.
@@ -433,16 +433,18 @@ void loop(){
 //1. Funciones de Logic interna del Micro.
   void welcome(){
     flag_F_inicio=false;
+    Serial.println("SEC,MST,RST");
     if(flag_F_depurar){
+      
       Serial.println("Sistema Iniciado");
       Serial.print("Direccion: ");
       Serial.println(localAddress);
     }
     info_1=String(Zonas, BIN);
-    Heltec.display->drawString(0, 20, "ZA");
-    Heltec.display->drawString(0, 30, "ZB");
-    Heltec.display->drawString(0, 40, "PA");
-    Heltec.display->drawString(0, 50, "PB");
+    Heltec.display->drawString(0, 20, "SEGURIDAD");
+    Heltec.display->drawString(0, 30, "PERIMETRAL");
+    Heltec.display->drawString(0, 40, "SECURE");
+    Heltec.display->drawString(0, 50, "ALL");
     Heltec.display->display();
     delay(500);
   }
@@ -757,7 +759,7 @@ void loop(){
                                   // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-        // 3. Nodos Leidos 1.
+        // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
 
@@ -769,16 +771,17 @@ void loop(){
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         codigo="R";
       }
-    // Respuesta Automatica al Nodo Siguiente.
+    // Respuesta b1 Automatica al Nodo Siguiente.
       void b1(){
         // 1. Destinatario.
         destination=Nodo_siguiente;                           // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-        // 3. Nodos Leidos 1.
+        // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-        // 4. Nodos Leidos 2.
+        // 4. Nodos Leidos.
+        nodosLSB=Nodos_LSB_ACK;
         // 5. Longitud de Bytes de la Cadena incoming_function.
         // Este byte lo escribe antes de Enviar el mensaje.
         // 6. Este byte contiene Informacion del Nodo.
@@ -787,35 +790,36 @@ void loop(){
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         codigo="R";
       }
-    // Maestro Inicia La Comunicacion.
+    // Maestro Inicia La Comunicacion b2.
       void b2 (){
         // 1. Destinatario.
         destination=0;                           // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-        // 3. Nodos Leidos 1.
         
-        // 4. Nodos Leidos 2.
+        // 4. Zonas Leidas 2.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-
+        // 5. Nodos Leidos.
+        nodosLSB=Nodos_LSB_ACK;
         // 5. Longitud de Bytes de la Cadena incoming_function.
         // Este byte lo escribe antes de Enviar el mensaje.
         // 6. Este byte contiene Informacion del Nodo.
         codigo=String("START");
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
       }
-    // Respuesta al Maestro
+    // Respuesta al Maestro b3, b4, b5
       void b3 (){
         // Informacion Acerca de los nodos que pude LEER.
         // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
         destination=master;                           // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-        // 3. Nodos Leidos 1.
+        // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-
+        // 4. Nodos Leidas.
+        nodosLSB=Nodos_LSB_ACK;
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -831,10 +835,11 @@ void loop(){
         destination=master;                           // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-        // 3. Nodos Leidos 1.
+        // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-
+        // 4. Nodos Leidos.
+        nodosLSB=Nodos_LSB_ACK;
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -850,11 +855,11 @@ void loop(){
         destination=master;                         // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
-        // 3. Nodos Leidos 1.
-        
+        // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-
+        // 5. Nodos Leidos.
+        nodosLSB=Nodos_LSB_ACK;
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -863,7 +868,7 @@ void loop(){
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         codigo="OK";
       }
-    // Respueta Nodo Siguiente
+    // Respueta Nodo Siguiente b6
       void b6 (){
         // Informacion Acerca de los nodos que pude LEER.
         // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
@@ -874,16 +879,16 @@ void loop(){
         
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-        // 5. Nodos Leidos.
+        // 5. Zonas Leidas.
         nodosLSB=Nodos_LSB_ACK;
         //6. Codigo
         if(flag_ISR_temporizador_1){
-          codigo="T2";
-        }
-        if(flag_ISR_temporizador_1){
           codigo="T1";
         }
-        if(flag_ISR_temporizador_1){
+        if(flag_ISR_temporizador_2){
+          codigo="T2";
+        }
+        if(flag_ISR_temporizador_3){
           codigo="T3";
         }
       }
@@ -897,8 +902,8 @@ void loop(){
         // 3. Nodos Leidos 1.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;                           // ANTERIORMENTE incoming_zonesLSB;
-        // 4. Nodos Leidos 2.
-              
+        // 4. Zonas Leidas 2.
+        nodosLSB=Nodos_LSB_ACK;       
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -971,7 +976,7 @@ void loop(){
       if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
         b6();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        if(flag_F_Nodo_Iniciado){
+        if(flag_F_Nodo_Iniciado){ // Pensado para activar el temporizador si no escucho al maestro.
           temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
         }
         beforeTime_2 = millis();  // despurar.
@@ -1018,11 +1023,10 @@ void loop(){
         // beforeTime_2 = millis();  // despurar.
         // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        temporizador_1.attach_ms(cycleTime, ISR_temporizador_0);
+        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
       }
       if(localAddress==master             && flag_F_masterNodo){
         b7();
-        flag_F_masterNodo=false;
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
       }
       if(localAddress==master             && flag_F_Nodos_Incompletos){
@@ -1033,12 +1037,10 @@ void loop(){
   //-4.3 Sever Update.  
     void serverUpdate(){
       flag_F_updateServer=false;
-      if(Zonas_LSB_Estados==0){
-        Serial.println("SEC,ALL,0,0");
-        return;
-      }
+      Serial.print("Nodo: ");
+      Serial.println(incoming_sender);
       // Nodo 1.
-      if(bitRead(nodosLSB, 1)){
+      if(bitRead(Nodos_LSB_ACK, 1)){
         if(bitRead(Zonas_LSB_Estados, P1ZA)){
           Serial.println("SEC,NOK,1,A");
         }
@@ -1054,7 +1056,7 @@ void loop(){
       }
 
       // Nodo 2.
-      if(bitRead(nodosLSB, 2)){
+      if(bitRead(Nodos_LSB_ACK, 2)){
         if(bitRead(Zonas_LSB_Estados, P2ZA)){
           Serial.println("SEC,NOK,2,A");
         }
@@ -1070,7 +1072,7 @@ void loop(){
       }
 
       // Nodo 3.
-      if(bitRead(nodosLSB, 3)){
+      if(bitRead(Nodos_LSB_ACK, 3)){
         if(bitRead(Zonas_LSB_Estados, P3ZA)){
           Serial.println("SEC,NOK,3,A");
         }
@@ -1086,7 +1088,7 @@ void loop(){
       }
 
       // Nodo 4.
-      if(bitRead(nodosLSB, 4)){
+      if(bitRead(Nodos_LSB_ACK, 4)){
         if(bitRead(Zonas_LSB_Estados, P4ZA)){
           Serial.println("SEC,NOK,4,A");
         }
@@ -1127,8 +1129,8 @@ void loop(){
         Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
         Zonas_LSB_str |=zonesLSB;
       
-      //2. NDOSO RECONOCIDOS.
-
+      //2. NODOS RECONOCIDOS.
+        
         if(flag_F_PAQUETE){
           if(incoming_sender==master){
             bitSet(Nodos_LSB_ACK, 0);
@@ -1138,10 +1140,14 @@ void loop(){
               bitSet(Nodos_LSB_ACK, incoming_sender);
             }
           }
+          Nodos_LSB_ACK |=incoming_nodosLSB;
+          
+          Nodos_LSB_str      = 256;
+          Nodos_LSB_str |=Nodos_LSB_ACK;        // Muestro Nodos Leidos en la OLED.
         }
 
           
-      // Pantalla.
+      //3. Pantalla.
         // LIMPIO PANTALLA
           Heltec.display->clear();
         // NODO INFORMACION
@@ -1158,12 +1164,13 @@ void loop(){
         // ZONA LOCAL
           Heltec.display->drawString(0, 30, "LOCAL:");
           Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
-        // INTEGRACION.
-          Heltec.display->drawString(0, 40, "ST:");
-          Heltec.display->drawString(50,40, String(incoming_zonesLSB, BIN));
+        // Nodos Leidos.
+          Heltec.display->drawString(0, 40, "NODOS:");
+          Heltec.display->drawString(45,40, String(Nodos_LSB_str, BIN));
+          Heltec.display->drawString(45,40, "#");
         // ZONA A
           Heltec.display->drawString(0, 50, "ZA:");
-          Heltec.display->drawString(16, 50, Zona_A_str);
+          Heltec.display->drawString(16,50, Zona_A_str);
         // ZONA B
           Heltec.display->drawString(25, 50, "ZB:");
           Heltec.display->drawString(41, 50, Zona_B_str);
@@ -1176,10 +1183,6 @@ void loop(){
         // MOSTAR
           Heltec.display->display();
           delay(100);
-        
-
-
-
     }
   //-4.5 Analizar.
     void analizar(){
@@ -1264,13 +1267,15 @@ void loop(){
       flag_F_responder=false;
       
       // FLAG ACKNOWLEDGE
-      flag_ISR_temporizador_2=false;  // se habilita en el ISR del temporiador 2
+      flag_ISR_temporizador_0=false;
       flag_ISR_temporizador_1=false;
-      flag_ISR_temporizador_0=false;
-      flag_ISR_temporizador_0=false;
+      flag_ISR_temporizador_2=false;  // se habilita en el ISR del temporiador 2
+      flag_ISR_temporizador_3=false;
       
+      flag_F_masterNodo=false;
       flag_F_masteRequest=false;
       flag_F_nodoRequest=false;
+
       flag_F_tokenTime=false;
       flag_F_cycleTime=false;
       
@@ -1280,7 +1285,6 @@ void loop(){
       
       incoming_sender=0;
       incoming_recipient=0;
-      Nodos_LSB_ACK=0;
       // DEBUG
       if(flag_F_depurar){
         Serial.println(".");
