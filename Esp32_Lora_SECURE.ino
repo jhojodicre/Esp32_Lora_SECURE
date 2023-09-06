@@ -173,6 +173,9 @@
       float       wakeUpTime = 90.0;
       long        tokenFirst;
       long        tokenLast;
+
+      uint32_t    remainT1;
+      uint32_t    remainT2;
       int         fastTime    =   1;
     // Alarmas
       int         Alarma_Zona_A_in=0;
@@ -195,7 +198,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x03; // address of this device           a3
+      byte        localAddress  = 0xFF; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -303,19 +306,20 @@ void setup(){
     //-2.3 Timer Answer.
       // cycleTime      = localAddress * 20;
       
-      tokenTime       = 2500;
+      tokenTime       = 2000;
+
       updateTime      = 2500;
       wakeUpTime      = tokenTime*localAddress;
-      cycleTime       = tokenTime*Nodos;
+      cycleTime       = tokenTime*(Nodos+2);
       masterTime      = cycleTime*2;
       tokenFirst      = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
       wakeUpTime      = 90.0;
       if(localAddress==Nodo_primero){
-        tokenTime =1000;
+        tokenTime =2000;
         Nodo_anterior=Nodo_ultimo;
       }
       if(localAddress==Nodo_ultimo){
-        tokenTime =1000;
+        tokenTime =2000;
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
@@ -1206,7 +1210,9 @@ void loop(){
           Nodos_LSB_str |=Nodos_LSB_ACK;        // Muestro Nodos Leidos en la OLED.
         }
 
-          
+      // Timer 1 y 2.
+      // remainT1=temporizador_1.remaining();
+      remainT2=temporizador_2.elapsed();
       //3. Pantalla.
         // LIMPIO PANTALLA
           Heltec.display->clear();
@@ -1224,14 +1230,18 @@ void loop(){
           Heltec.display->drawString(45, 20, String(Zonas_LSB_str, BIN));
           Heltec.display->drawString(45, 20, "#");
         // ZONA LOCAL
-          Heltec.display->drawString(0, 30, "LOCAL:");
-          Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
+          // Heltec.display->drawString(0, 30, "LOCAL:");
+          // Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
+          Heltec.display->drawString(0, 30, "T1:");
+          Heltec.display->drawString(17,30, String(remainT1, DEC)); 
+          Heltec.display->drawString(65,30, "T2:");
+          Heltec.display->drawString(80,30, String(remainT2, DEC));          
         // Error de Zona.
-          Heltec.display->drawString(65,30, String(zona_1, DEC));
+          // Heltec.display->drawString(65,30, String(zona_1, DEC));
 
         // NODOS COMPLETOS
-          Heltec.display->drawString(75,30, String("Nds: "));
-          Heltec.display->drawString(99,30, String(flag_F_Nodos_Completos, DEC));
+          // Heltec.display->drawString(75,30, String("Nds: "));
+          // Heltec.display->drawString(99,30, String(flag_F_Nodos_Completos, DEC));
         // Nodos Leidos.
           Heltec.display->drawString(0, 40, "NODOS:");
           Heltec.display->drawString(45,40, String(Nodos_LSB_str, BIN));
