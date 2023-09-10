@@ -84,14 +84,17 @@
     bool          flag_F_PAQUETE=false;
     bool          flag_F_tokenTime=false;
     bool          flag_F_cycleTime=false;
+    bool          flag_F_T2_run=false;
+    bool          flag_F_T1_run=false;
     bool          flag_F_Nodos_Completos=false;
     bool          flag_F_Nodos_Incompletos=false;
     bool          flag_F_Nodo_Iniciado=false;
     bool          flag_F_Nodo_Ultimo=false;
+    bool          flag_F_nodo_Anterior=false;       // Indica cuando el nodo anterior se a comunicado con el nodo actual.
     bool          flag_F_token=false;               // Se habilita caundo el nodo responde por token
     bool          flag_F_analizar=false;
   //-3.3 Variables para Logica interna.
-
+      int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       byte        master=0xFF;
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
       byte        Nodo_anterior;
@@ -101,10 +104,10 @@
       byte        Nodo_destino;
       word        Nodos_LSB_ACK;
       int         Nodos_LSB_str;
-      int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
+      
       String      Nodo_Name;
-      byte        nodos_LSB;           // variable para igualar el dato de los nodos reportados
-      byte        nodos_MSB;
+      byte        nodos_LSB_MERGE;           // variable para igualar el dato de los nodos reportados
+      byte        nodos_MSB_MERGE;
 
       byte        Zonas_MSB=0;
       byte        Zonas_LSB=0;
@@ -198,7 +201,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF; // address of this device           a3
+      byte        localAddress  = 0xff; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -258,7 +261,7 @@
       // }
     }
     void ISR_temporizador_1(){
-        currentTime_1 = millis();
+        beforeTime_1 = millis();
         if(flag_F_token){
           flag_F_token=false;
           return;
@@ -270,6 +273,8 @@
       currentTime_2 = millis();
       flag_ISR_temporizador_2=true;
       flag_F_token=true;
+      elapseTime_2=0;
+      flag_F_T2_run=false;
     }
     void ISR_temporizador_3(){
       if(flag_F_Nodo_Iniciado) return;
@@ -377,6 +382,8 @@ void loop(){
       led_Monitor(3);
       if(localAddress==255){
         temporizador_1.attach_ms(masterTime, ISR_temporizador_1);
+        beforeTime_1=millis();
+        flag_F_T1_run=true;
       }
     }
   //2. Decodificar funcion serial
@@ -401,19 +408,8 @@ void loop(){
 
     //-4.2 F- Timer 1.
       if(flag_ISR_temporizador_1){
-        elapseTime_1 = currentTime_1 - beforeTime_1;
-        if(flag_F_depurar){
-          Serial.print("ET1: ");
-          Serial.println(elapseTime_1);
-          Serial.print("CT1: ");
-          Serial.println(currentTime_1);
-          Serial.print("BT1: ");
-          Serial.println(beforeTime_1);
-        }
-        beforeTime_1 = currentTime_1;
-
         analizar();
-        if(localAddress==255 && flag_F_Nodos_Incompletos){
+        if(localAddress==255 && flag_F_Nodos_Completos==false){
           if(!flag_F_masterIniciado){
             b1();
           }
@@ -421,15 +417,19 @@ void loop(){
             b2();
           }
           flag_F_responder=true;
+          flag_F_PAQUETE=false;
+          codigo="TC";
         }
-        if(localAddress<255 && flag_F_Nodos_Incompletos){
+        if(localAddress<255 && !flag_F_nodo_Anterior){
           b6();
           flag_F_responder=true;
+          flag_F_PAQUETE=false;
+          codigo="TC";
         }
       }
     //-4.3 F- Timer 2.
       if(flag_ISR_temporizador_2){
-        elapseTime_2 = currentTime_2 - beforeTime_2;
+        beforeTime_2=0;
 
         if(flag_F_depurar){
           Serial.print("ET2: ");
@@ -442,6 +442,7 @@ void loop(){
         }     
         flag_F_tokenTime=true;
         flag_F_responder=true;
+        codigo="TK";
       }
     //-4.4 F- Timer 0.
       if(flag_ISR_temporizador_0){
@@ -822,7 +823,7 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
         // 4. Nodos Leidos.
-        nodosLSB=Nodos_LSB_ACK;
+        nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function.
         // Este byte lo escribe antes de Enviar el mensaje.
         // 6. Este byte contiene Informacion del Nodo.
@@ -842,7 +843,7 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
         // 5. Nodos Leidos.
-        nodosLSB=Nodos_LSB_ACK;
+        nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function.
         // Este byte lo escribe antes de Enviar el mensaje.
         // 6. Este byte contiene Informacion del Nodo.
@@ -860,7 +861,7 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
         // 4. Nodos Leidas.
-        nodosLSB=Nodos_LSB_ACK;
+        nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -880,7 +881,7 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
         // 4. Nodos Leidos.
-        nodosLSB=Nodos_LSB_ACK;
+        nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -900,7 +901,7 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
         // 5. Nodos Leidos.
-        nodosLSB=Nodos_LSB_ACK;
+        nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -921,17 +922,8 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
         // 5. Zonas Leidas.
-        nodosLSB=Nodos_LSB_ACK;
-        //6. Codigo
-        if(flag_ISR_temporizador_1){
-          codigo="T1";
-        }
-        if(flag_ISR_temporizador_2){
-          codigo="T2";
-        }
-        if(flag_ISR_temporizador_3){
-          codigo="T3";
-        }
+        nodosLSB=nodos_LSB_MERGE;
+        //6. Codigo.
       }
     // b7- Respuesta a Comandos del Maestro.  
       void b7 (){
@@ -944,7 +936,7 @@ void loop(){
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;                           // ANTERIORMENTE incoming_zonesLSB;
         // 4. Zonas Leidas 2.
-        nodosLSB=Nodos_LSB_ACK;       
+        nodosLSB=nodos_LSB_MERGE;       
         // 5. Longitud de Bytes de la Cadena incoming_function
           // Este byte lo escribe antes de Enviar el mensaje
         // 6. Este byte contiene Informacion del Nodo
@@ -1016,21 +1008,23 @@ void loop(){
       //_____________Modo NODE_______________________________
       if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
         b6();
-        temporizador_1.detach();
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
         beforeTime_2 = millis();  // despurar.
         beforeTime_1 = millis();  // despurar.
+        flag_F_T2_run=true;
+        flag_F_T1_run=true;
       }
       // Modo MASTER Broadcast.
       if(incoming_recipient==0              && incoming_sender==master){
         b6();
         flag_F_Nodo_Iniciado=true;
-        temporizador_1.detach();
         temporizador_2.once_ms(tokenFirst, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
         beforeTime_2 = millis();  // despurar.
         beforeTime_1 = millis();  // despurar.
+        flag_F_T2_run=true;
+        flag_F_T1_run=true;
       }
       // Modo MASTER >> PARTICULAR si el master quiere saber: a quien puede escuchar.
       if(incoming_recipient==254            && incoming_sender==master && flag_F_Nodo_Iniciado==false){
@@ -1044,12 +1038,14 @@ void loop(){
       if(incoming_recipient==localAddress   && incoming_sender==master){
         b3();
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+        flag_F_T2_run=true;
       }
       // Modo NODO  >> PRINCIPAL.
       if(localAddress==Nodo_actual          && flag_F_nodoRequest){
         b6();
         beforeTime_2 = millis();  // despurar.
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+        flag_F_T2_run=true;
       } 
       // Modo NODOD >> BROADCAST CONTINUO (Prueba).
       if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
@@ -1065,10 +1061,13 @@ void loop(){
         // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
         temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+        flag_F_T2_run=true;
+        flag_F_T1_run=true;
       }
       if(localAddress==master             && flag_F_masterNodo){
         b7();
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+        flag_F_T2_run=true;
       }
       // if(localAddress==master             && flag_F_Nodos_Incompletos){
       //   b0();
@@ -1082,12 +1081,13 @@ void loop(){
       Serial.print(incoming_sender);
       Serial.print(" ");
       Serial.println(incoming_function);
-      // if(incoming_nodosLSB==15){
-      //   if(incoming_zonesLSB==0){
-      //     Serial.println("SEC,ALL,OK");
-      //     return;
-      //   }
-      // }
+
+      if(incoming_nodosLSB==15){
+        if(incoming_zonesLSB==0){
+          Serial.println("SEC,ALL,0,0");
+          return;
+        }
+      }
       // Nodo 1.
         if(bitRead(Nodos_LSB_ACK, 1)){
           if(bitRead(Zonas_LSB_Estados, P1ZA) && zona_1_err==false){
@@ -1190,29 +1190,46 @@ void loop(){
         Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
         Zonas_LSB_str |=zonesLSB;
       
-      //2. NODOS RECONOCIDOS.
+      //2. NODOS RECONOCIDOS Propiamente.
         
         if(flag_F_PAQUETE){
+        //-2.1 Si el mensaje es del Maestro Activar el Bit 0.
           if(incoming_sender==master || localAddress==master){
             bitSet(Nodos_LSB_ACK, 0);
           }
+        //-2.2 Si el mensaje es del Maestro Activar el Bit Correspondiente.
           if(incoming_sender<master){
             if(incoming_sender>0){
               bitSet(Nodos_LSB_ACK, incoming_sender);
             }
           }
+        //-2.3 Activar ppropiamente el bit segun la direccion local.  
           if(localAddress<255){
             bitSet(Nodos_LSB_ACK, localAddress);
           }
-          // Nodos_LSB_ACK &=incoming_nodosLSB;
-          
-          Nodos_LSB_str      = 256;
-          Nodos_LSB_str |=Nodos_LSB_ACK;        // Muestro Nodos Leidos en la OLED.
-        }
 
-      // Timer 1 y 2.
-      // remainT1=temporizador_1.remaining();
-      remainT2=temporizador_2.elapsed();
+        //-2.4 Nodos Para Mostrar 
+          Nodos_LSB_str      = 256;
+          Nodos_LSB_str |=Nodos_LSB_ACK;
+      
+        //-2.5. Sumatoria de Nodos Entrantes.
+          nodos_LSB_MERGE = Nodos_LSB_ACK | incoming_nodosLSB;
+
+        }
+      // FLAG Nodo Anterior.
+        if(incoming_sender==Nodo_anterior){
+          flag_F_nodo_Anterior=true;
+        }
+      // Tiempo transcurrido para Timer 1
+        if(flag_F_T1_run){
+          currentTime_1=millis();
+          elapseTime_1=currentTime_1-beforeTime_1;
+        }
+        
+        if(flag_F_T2_run){
+          currentTime_2=millis();
+          elapseTime_2=currentTime_2-beforeTime_2;
+        }
       //3. Pantalla.
         // LIMPIO PANTALLA
           Heltec.display->clear();
@@ -1233,9 +1250,9 @@ void loop(){
           // Heltec.display->drawString(0, 30, "LOCAL:");
           // Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
           Heltec.display->drawString(0, 30, "T1:");
-          Heltec.display->drawString(17,30, String(remainT1, DEC)); 
+          Heltec.display->drawString(17,30, String(elapseTime_1, DEC)); 
           Heltec.display->drawString(65,30, "T2:");
-          Heltec.display->drawString(80,30, String(remainT2, DEC));          
+          Heltec.display->drawString(80,30, String(elapseTime_2, DEC));          
         // Error de Zona.
           // Heltec.display->drawString(65,30, String(zona_1, DEC));
 
@@ -1272,19 +1289,14 @@ void loop(){
 
         if(Nodos_LSB_ACK==15){
           flag_F_Nodos_Completos=true;
-          flag_F_Nodos_Incompletos=false;
         }
-        if(Nodos_LSB_ACK<15){
-          flag_F_Nodos_Incompletos=true;
-          flag_F_Nodos_Completos=false;
-        }
+
       // Nodo Ultimo.
         if(incoming_sender==Nodos){
           flag_F_Nodo_Ultimo=true;
         }
       // RESETEO DE NODOS LEIDOS.  
         Nodos_LSB_ACK=0;
-      //   
       // FALLA CONSTANTE.
       // NODO_1
         if(bitRead(Zonas_LSB_Estados, P1ZA)){
@@ -1379,24 +1391,30 @@ void loop(){
       flag_ISR_temporizador_2=false;  // se habilita en el ISR del temporiador 2
       flag_ISR_temporizador_3=false;
       
+      flag_F_masterIniciado=true;
       flag_F_masterNodo=false;
       flag_F_masteRequest=false;
       flag_F_nodoRequest=false;
+      flag_F_nodo_Anterior=false;
+
 
       flag_F_tokenTime=false;
       flag_F_cycleTime=false;
-      flag_F_masterIniciado=true;
+
       // eventos
         flag_F_Nodo_Iniciado=true;
         flag_F_respondido=true;
       
       incoming_sender=0;
       incoming_recipient=0;
+      //Borrar datos leidos porcada ciclo de lectura de todos los nodos.
+      Nodos_LSB_ACK=0;
+      nodos_LSB_MERGE=0;
       // DEBUG
       if(flag_F_depurar){
         Serial.println(".");
       }
-      Heltec.display->drawString(117, 0, "*");
+      Heltec.display->drawString(120, 0, "*");
       Heltec.display->display();
       delay(300);
     }
