@@ -697,7 +697,7 @@ void loop(){
         }
         b0();
       }                            
-    // Function tipo C
+    // Function tipo C.
       if (funtion_Mode=="C" && funtion_Number=="1"){
         Serial.println("funion C Nº1: updateServer");
         c1(x2);
@@ -707,7 +707,6 @@ void loop(){
         Serial.println("Ninguna Funcion");
         }
       }
-      
   }
 
 //3. Funciones Seleccionadas para Ejecutar.
