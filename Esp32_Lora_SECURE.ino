@@ -46,7 +46,7 @@
   //-2.5 timer
 
 //3. Variables Globales.
-  //-3.1 Variables para las Interrupciones
+  //-3.1 Variables Interrupciones
     volatile bool flag_ISR_prueba=false;             // Flag: prueba para interrupcion serial.
     volatile bool falg_ISR_stringComplete=false;    // Flag: mensaje Serial Recibido completo.
     volatile bool flag_ISR_temporizador_1=false;
@@ -67,7 +67,7 @@
     volatile int  x2=0;
     volatile int  x3=0;
     volatile int  x4=0;
-  //-3.2 Variables Globales para Las Funciones.
+  //-3.2 Variables Banderas.
     bool          flag_F_codified_funtion=false;   // Notifica que la funcion ha sido codificada.
     bool          flag_F_Un_segundo=false;         // Se activa cuando Pasa un Segundo por Interrupcion.
     bool          flag_F_inicio=true;              // Habilitar mensaje de flag_F_inicio por unica vez
@@ -93,7 +93,7 @@
     bool          flag_F_nodo_Anterior=false;       // Indica cuando el nodo anterior se a comunicado con el nodo actual.
     bool          flag_F_token=false;               // Se habilita caundo el nodo responde por token
     bool          flag_F_analizar=false;
-  //-3.3 Variables para Logica interna.
+  //-3.3 Variables NODOS y ZONAS.
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       byte        master=0xFF;
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
@@ -155,7 +155,7 @@
 
 
       int         te_toca=1;           // Prueba para comunicacion continua con el servidor.      
-  //-3.4 Tiempos para tipos de respuestas  
+  //-3.4 Variables TIME.
       long        initialTime= 0;
 
       long        currentTime_1 = 0;
@@ -174,9 +174,9 @@
       long        updateTime = 2000;
       long        masterTime = 10000;
       float       wakeUpTime = 90.0;
-      long        tokenFirst;
+      long        firstTime;
       long        tokenLast;
-
+      long        waitTime   = 0;
       uint32_t    remainT1;
       uint32_t    remainT2;
       int         fastTime    =   1;
@@ -186,7 +186,7 @@
       int         Alarma_Entrada_X1_in=0;
     // Eventos
       
-  //-3.5 RFM95 Variables.
+  //-3.5 Variables RFM95.
     // Variables para Recibir.
       byte        incoming_sender;               // incoming_sender address
       int         incoming_recipient;            // incoming_recipient address      
@@ -309,15 +309,14 @@ void setup(){
         Nodo_Name="NODO:";
       }
     //-2.3 Timer Answer.
-      // cycleTime      = localAddress * 20;
       
-      tokenTime       = 2000;
-
+      tokenTime       = 1000;
+      baseTime        = 1000;
       updateTime      = 2500;
       wakeUpTime      = tokenTime*localAddress;
-      cycleTime       = tokenTime*(Nodos+2);
+      cycleTime       = tokenTime*(Nodos+1);
       masterTime      = cycleTime*2;
-      tokenFirst      = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
+      firstTime       = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
       wakeUpTime      = 90.0;
       if(localAddress==Nodo_primero){
         tokenTime =2000;
@@ -409,17 +408,19 @@ void loop(){
     //-4.2 F- Timer 1.
       if(flag_ISR_temporizador_1){
         analizar();
-        if(localAddress==255 && flag_F_Nodos_Completos==false){
-          if(!flag_F_masterIniciado){
-            b1();
-          }
-          else{
-            b2();
-          }
-          flag_F_responder=true;
-          flag_F_PAQUETE=false;
-          codigo="TC";
-        }
+        //MASTER
+          // if(localAddress==255 && flag_F_Nodos_Completos==false){
+          //   if(!flag_F_masterIniciado){
+          //     b1();
+          //   }
+          //   else{
+          //     b2();
+          //   }
+          //   flag_F_responder=true;
+          //   flag_F_PAQUETE=false;
+          //   codigo="TC";
+          // }
+        //NODOS.
         if(localAddress<255 && !flag_F_nodo_Anterior){
           b6();
           flag_F_responder=true;
@@ -1014,12 +1015,14 @@ void loop(){
         beforeTime_1 = millis();  // despurar.
         flag_F_T2_run=true;
         flag_F_T1_run=true;
+        flag_F_Nodo_Iniciado=true;
+        Nodo_waiting=false;
       }
       // Modo MASTER Broadcast.
       if(incoming_recipient==0              && incoming_sender==master){
         b6();
         flag_F_Nodo_Iniciado=true;
-        temporizador_2.once_ms(tokenFirst, ISR_temporizador_2);
+        temporizador_2.once_ms(firstTime, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
         beforeTime_2 = millis();  // despurar.
         beforeTime_1 = millis();  // despurar.
@@ -1072,7 +1075,12 @@ void loop(){
       // if(localAddress==master             && flag_F_Nodos_Incompletos){
       //   b0();
       // }
-
+      //
+      if(Nodo_waiting && !flag_F_Nodo_Iniciado){
+        temporizador_1.attach(waitTime, ISR_temporizador_1);
+        flag_F_T1_run=true;
+        flag_F_Nodo_Iniciado=true;
+      }
     }
   //-4.3 Sever Update.  
     void serverUpdate(){
@@ -1167,70 +1175,77 @@ void loop(){
   //-4.4 Actualizar.  
     void actualizar(){
       //Procedimiento
-      //1. Estado de Zonas Normalmente en Zero 0 y Activas en Uno 1
-      //2. Borrar estados actuales de entradas ó Zonas Locales.
-      //3. Conservar estados de Entradas de los demas Nodos Aplicando Una and.
-      //4. Actualizo estados Propios en el mensaje de Salida con una OR.
+        //1. Estado de Zonas Normalmente en Zero 0 y Activas en Uno 1
+        //2. Borrar estados actuales de entradas ó Zonas Locales.
+        //3. Conservar estados de Entradas de los demas Nodos Aplicando Una and.
+        //4. Actualizo estados Propios en el mensaje de Salida con una OR.
       
-      //1. ESTADOS DE ZONAS LOCALES.
-        Zonas_MSB=highByte(Zonas);        //incoming_zonesMSB;
-        Zonas_LSB=lowByte(Zonas);         //incoming_zonesLSB;
+      //1. ESTADOS DE ZONAS.
+        //-1.1 ZONAS LOCALES.
+          Zonas_MSB=highByte(Zonas);
+          Zonas_LSB=lowByte(Zonas);
 
-        // Aplico la Mascara. Mascara: Todos los bits en 1 Uno y Las Zonas locales en Cero 0.
-        Zonas_LSB_Estados=Zonas_LSB_Mascara & incoming_zonesLSB;
-        Zonas_MSB_Estados=Zonas_MSB_Mascara & incoming_zonesMSB;
+        //-1.2 Aplico la Mascara. Mascara: Todos los bits en 1 Uno y Las Zonas locales en Cero 0.
+          Zonas_LSB_Estados=Zonas_LSB_Mascara & incoming_zonesLSB;
+          Zonas_MSB_Estados=Zonas_MSB_Mascara & incoming_zonesMSB;
 
-        // INTEGRO ZONAS LOCALES CON ZONAS ENTRANTES.
-        Zonas_LSB_Estados |= Zonas_LSB;
-        Zonas_MSB_Estados |= Zonas_MSB;
-        // PREPARAMOS LA VARIABLE A SER ENVIADA.
-        zonesLSB=Zonas_LSB_Estados;
-        zonesMSB=Zonas_MSB_Estados;
-        
-        Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
-        Zonas_LSB_str |=zonesLSB;
+        //-1.3 INTEGRO ZONAS LOCALES CON ZONAS ENTRANTES.
+          Zonas_LSB_Estados |= Zonas_LSB;
+          Zonas_MSB_Estados |= Zonas_MSB;
+
+        //-1.4 PREPARAMOS LA VARIABLE A SER ENVIADA.
+          zonesLSB=Zonas_LSB_Estados;
+          zonesMSB=Zonas_MSB_Estados;
+
+        //.1.5 Varibles para Pantalla OLED.
+          Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
+          Zonas_LSB_str |=zonesLSB;
       
-      //2. NODOS RECONOCIDOS Propiamente.
-        
+      //2. ESTADOS DE NODOS. 
         if(flag_F_PAQUETE){
-        //-2.1 Si el mensaje es del Maestro Activar el Bit 0.
+        //-2.1 bit MAESTRO LEIDO Si el mensaje es del Maestro Activar el Bit 0.
           if(incoming_sender==master || localAddress==master){
             bitSet(Nodos_LSB_ACK, 0);
           }
-        //-2.2 Si el mensaje es del Maestro Activar el Bit Correspondiente.
+        //-2.2 bit NODOS LEIDOS Si el mensaje es de Cualquier Nodo Activar el Bit Correspondiente.
           if(incoming_sender<master){
-            if(incoming_sender>0){
+            if(incoming_sender>0){    // Si el Mensaje es para Todos el receptor es para todos=0
               bitSet(Nodos_LSB_ACK, incoming_sender);
             }
           }
-        //-2.3 Activar ppropiamente el bit segun la direccion local.  
+        //-2.3 bit NODO LOCAL Activar propiamente el bit segun la direccion local.  
           if(localAddress<255){
             bitSet(Nodos_LSB_ACK, localAddress);
           }
 
-        //-2.4 Nodos Para Mostrar 
+        //-2.4 Nodos Para Mostrar en OLED.
           Nodos_LSB_str      = 256;
           Nodos_LSB_str |=Nodos_LSB_ACK;
       
-        //-2.5. Sumatoria de Nodos Entrantes.
+        //-2.5 Sumatoria de Nodos Entrantes.
           nodos_LSB_MERGE = Nodos_LSB_ACK | incoming_nodosLSB;
+        //-2.6 Start Nodo waiting.
+          if(!flag_F_Nodo_Iniciado){
+            Nodo_waiting=true;
+            waitTime=(Nodos+(Nodo_actual-incoming_sender))*baseTime;
+          }
+        //-2.7 FLAG Nodo Anterior.
+          if(incoming_sender==Nodo_anterior){
+            flag_F_nodo_Anterior=true;
+          }
+        }
 
-        }
-      // FLAG Nodo Anterior.
-        if(incoming_sender==Nodo_anterior){
-          flag_F_nodo_Anterior=true;
-        }
-      // Tiempo transcurrido para Timer 1
-        if(flag_F_T1_run){
-          currentTime_1=millis();
-          elapseTime_1=currentTime_1-beforeTime_1;
-        }
-        
-        if(flag_F_T2_run){
-          currentTime_2=millis();
-          elapseTime_2=currentTime_2-beforeTime_2;
-        }
       //3. Pantalla.
+        // Tiempo transcurrido para Timer 1
+          if(flag_F_T1_run){
+            currentTime_1=millis();
+            elapseTime_1=currentTime_1-beforeTime_1;
+          }
+        // Tiempo Transcurrido para Timer 2.  
+          if(flag_F_T2_run){
+            currentTime_2=millis();
+            elapseTime_2=currentTime_2-beforeTime_2;
+          }
         // LIMPIO PANTALLA
           Heltec.display->clear();
         // NODO INFORMACION
@@ -1281,43 +1296,38 @@ void loop(){
     }
   //-4.5 Analizar.
     void analizar(){
-      // EVENTOS
-
-        if(localAddress==255){
-          bitSet(Nodos_LSB_ACK, 0);
-        }
-
-        if(Nodos_LSB_ACK==15){
+      //1 Nodos Leidos
+        if(Nodos_LSB_ACK>=14){
           flag_F_Nodos_Completos=true;
         }
 
-      // Nodo Ultimo.
+      //2 Nodo Ultimo.
         if(incoming_sender==Nodos){
           flag_F_Nodo_Ultimo=true;
         }
-      // RESETEO DE NODOS LEIDOS.  
+      //3 RESETEO DE NODOS LEIDOS.  
         Nodos_LSB_ACK=0;
-      // FALLA CONSTANTE.
-      // NODO_1
-        if(bitRead(Zonas_LSB_Estados, P1ZA)){
-          if(!zona_1_err){
-            ++ zona_1 ;
-            if(zona_1==5){
-              zona_1=0;
-              zona_1_err=true;
+      //4 FALLA CONSTANTE.
+        // NODO_1
+          if(bitRead(Zonas_LSB_Estados, P1ZA)){
+            if(!zona_1_err){
+              ++ zona_1 ;
+              if(zona_1==5){
+                zona_1=0;
+                zona_1_err=true;
+              }
             }
           }
-        }
-      // NODO_2.
-        if(bitRead(Zonas_LSB_Estados, P1ZB)){
-          if(!zona_1_err){
-            ++ zona_2 ;
-            if(zona_2==5){
-              zona_2=0;
-              zona_2_err=true;
+        // NODO_2.
+          if(bitRead(Zonas_LSB_Estados, P1ZB)){
+            if(!zona_1_err){
+              ++ zona_2 ;
+              if(zona_2==5){
+                zona_2=0;
+                zona_2_err=true;
+              }
             }
           }
-        }
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
@@ -1400,7 +1410,7 @@ void loop(){
 
       flag_F_tokenTime=false;
       flag_F_cycleTime=false;
-
+      Nodo_waiting=false;             // El Nodo ya se inició.
       // eventos
         flag_F_Nodo_Iniciado=true;
         flag_F_respondido=true;
