@@ -93,6 +93,8 @@
     bool          flag_F_nodo_Anterior=false;       // Indica cuando el nodo anterior se a comunicado con el nodo actual.
     bool          flag_F_token=false;               // Se habilita caundo el nodo responde por token
     bool          flag_F_analizar=false;
+    bool          Nodo_waiting=false;
+  
   //-3.3 Variables NODOS y ZONAS.
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       byte        master=0xFF;
@@ -162,7 +164,10 @@
       long        elapseTime_1 = 0;
       long        afterTime_1  = 0;
       long        beforeTime_1 = 0;
-      
+      long        beforeTime_GAP;         // Tiempo transcurrido entre mensajes entrantes para el MASTER.
+      long        currentTime_GAP;
+      long        elapseTime_GAP;
+
       long        currentTime_2 = 0;
       long        elapseTime_2 = 0;
       long        afterTime_2  = 0;
@@ -201,7 +206,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xff; // address of this device           a3
+      byte        localAddress  = 0x03; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -312,18 +317,18 @@ void setup(){
       
       tokenTime       = 1000;
       baseTime        = 1000;
-      updateTime      = 2500;
+      updateTime      = 1000;
       wakeUpTime      = tokenTime*localAddress;
       cycleTime       = tokenTime*(Nodos+1);
       masterTime      = cycleTime*2;
       firstTime       = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
-      wakeUpTime      = 90.0;
+      wakeUpTime      = 30.0;
       if(localAddress==Nodo_primero){
-        tokenTime =2000;
+        tokenTime =1000;
         Nodo_anterior=Nodo_ultimo;
       }
       if(localAddress==Nodo_ultimo){
-        tokenTime =2000;
+        tokenTime =1000;
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
@@ -1232,7 +1237,10 @@ void loop(){
           if(incoming_sender==Nodo_anterior){
             flag_F_nodo_Anterior=true;
           }
+       
+          
         }
+
 
       //3. Pantalla.
         // Tiempo transcurrido para Timer 1
@@ -1245,6 +1253,9 @@ void loop(){
             currentTime_2=millis();
             elapseTime_2=currentTime_2-beforeTime_2;
           }
+         // Tiempo Transcurrido ENTRE MENSAJES RECIBIDOS GAP DEL MASTER.  
+          currentTime_GAP=millis();
+          
         // LIMPIO PANTALLA
           Heltec.display->clear();
         // NODO INFORMACION
@@ -1278,17 +1289,25 @@ void loop(){
           Heltec.display->drawString(45,40, String(Nodos_LSB_str, BIN));
           Heltec.display->drawString(45,40, "#");
         // ZONA A
-          Heltec.display->drawString(0, 50, "ZA:");
-          Heltec.display->drawString(16,50, Zona_A_str);
+          if(localAddress<255){
+            Heltec.display->drawString(0, 50, "ZA:");
+            Heltec.display->drawString(16,50, Zona_A_str);
         // ZONA B
-          Heltec.display->drawString(25, 50, "ZB:");
-          Heltec.display->drawString(41, 50, Zona_B_str);
+            Heltec.display->drawString(25, 50, "ZB:");
+            Heltec.display->drawString(41, 50, Zona_B_str);
         // PULSADOR A
-          Heltec.display->drawString(55, 50, "PA:");
-          Heltec.display->drawString(72, 50, Zona_B_PB_str);
+            Heltec.display->drawString(55, 50, "PA:");
+            Heltec.display->drawString(72, 50, Zona_B_PB_str);
         // PULSADOR B
-          Heltec.display->drawString(85, 50, "PB:");
-          Heltec.display->drawString(101, 50, Zona_A_PB_str);
+            Heltec.display->drawString(85, 50, "PB:");
+            Heltec.display->drawString(101, 50, Zona_A_PB_str);
+          }
+          else{
+        // Tiempo Transcurrido para el Master entre mensajes recibidos.    
+            Heltec.display->drawString(0, 50, "TGM:");
+            Heltec.display->drawString(25, 50, String(elapseTime_GAP, DEC));            
+
+          }
         // MOSTAR
           Heltec.display->display();
           delay(100);
@@ -1349,6 +1368,10 @@ void loop(){
         Serial.println("error: message length does not match length");
         return;                             // skip rest of function
       }
+      elapseTime_GAP=currentTime_GAP-beforeTime_GAP;
+      beforeTime_GAP=millis();
+      
+
       // if the incoming_recipient isn't this device or broadcast,
       // if (incoming_recipient != localAddress && incoming_recipient != 0xFF) {
       //   Serial.println("Sent to: 0x" + String(incoming_recipient, HEX));
