@@ -1228,7 +1228,7 @@ void loop(){
       
         //-2.5 Sumatoria de Nodos Entrantes.
           nodos_LSB_MERGE = Nodos_LSB_ACK | incoming_nodosLSB;
-        //-2.6 Start Nodo waiting.
+        //-2.6 Start Nodo waiting. funciona solo para los nodos.
           if(!flag_F_Nodo_Iniciado){
             Nodo_waiting=true;
             waitTime=(Nodos+(Nodo_actual-incoming_sender))*baseTime;
@@ -1271,7 +1271,7 @@ void loop(){
           Heltec.display->drawString(0, 20, "SUMA:");
           Heltec.display->drawString(45, 20, String(Zonas_LSB_str, BIN));
           Heltec.display->drawString(45, 20, "#");
-        // ZONA LOCAL
+        // ZONA LOCAL TIMER 1 Y 2 TIEMPO TRANSCURRIDO
           // Heltec.display->drawString(0, 30, "LOCAL:");
           // Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
           Heltec.display->drawString(0, 30, "T1:");
@@ -1305,7 +1305,12 @@ void loop(){
           else{
         // Tiempo Transcurrido para el Master entre mensajes recibidos.    
             Heltec.display->drawString(0, 50, "TGM:");
-            Heltec.display->drawString(25, 50, String(elapseTime_GAP, DEC));            
+            Heltec.display->drawString(25, 50, String(elapseTime_GAP, DEC));
+
+
+
+            Heltec.display->drawString(55,50, String(Nodos_LSB_ACK, BIN));
+            Heltec.display->drawString(55,50, "#");            
 
           }
         // MOSTAR
@@ -1440,8 +1445,8 @@ void loop(){
       incoming_sender=0;
       incoming_recipient=0;
       //Borrar datos leidos porcada ciclo de lectura de todos los nodos.
-      Nodos_LSB_ACK=0;
-      nodos_LSB_MERGE=0;
+      // Nodos_LSB_ACK=0;
+      // nodos_LSB_MERGE=0;
       // DEBUG
       if(flag_F_depurar){
         Serial.println(".");
