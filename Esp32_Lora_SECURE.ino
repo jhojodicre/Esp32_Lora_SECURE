@@ -206,7 +206,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x03; // address of this device           a3
+      byte        localAddress  = 0xFF; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -1080,7 +1080,7 @@ void loop(){
       //   b0();
       // }
       //
-      if(Nodo_waiting && !flag_F_Nodo_Iniciado){
+      if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
         temporizador_1.attach(waitTime, ISR_temporizador_1);
         flag_F_T1_run=true;
         flag_F_Nodo_Iniciado=true;
@@ -1094,8 +1094,8 @@ void loop(){
       Serial.print(" ");
       Serial.println(incoming_function);
 
-      if(incoming_nodosLSB==15){
-        if(incoming_zonesLSB==0){
+      if(Nodos_LSB_ACK==15){
+        if(Nodos_LSB_ACK==0){
           Serial.println("SEC,ALL,0,0");
           return;
         }
@@ -1446,7 +1446,4 @@ void loop(){
       if(flag_F_depurar){
         Serial.println(".");
       }
-      Heltec.display->drawString(120, 0, "*");
-      Heltec.display->display();
-      delay(300);
     }
