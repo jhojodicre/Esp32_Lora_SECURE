@@ -205,8 +205,8 @@
       
 
     // Variable para Enviar.
-      byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x01; // address of this device           a3
+      byte        destination; // destination to send to  0xFF;         a4      
+      byte        localAddress  = 0x03 ; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -449,6 +449,9 @@ void loop(){
         flag_F_tokenTime=true;
         flag_F_responder=true;
         codigo="TK";
+        if(flag_F_masterNodo){
+          codigo=function_Remote;
+        }
       }
     //-4.4 F- Timer 0.
       if(flag_ISR_temporizador_0){
@@ -457,6 +460,7 @@ void loop(){
       }
     //-4.5 F- Timer 3.
       if(flag_ISR_temporizador_3){
+        b6();
         flag_F_responder=true;
       }
 
@@ -535,20 +539,20 @@ void loop(){
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ001");
+          Serial.println("funion A N?ง001");
         }  
         a1_Nodo_Destellos(x1,x2);
       }
       if (funtion_Mode=="A" && funtion_Number=="2"){
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ2");
+          Serial.println("funion A N?ง2");
         }
         a2();
       }
       if (funtion_Mode=="A" && funtion_Number=="3"){
         // FUNCIONO A MEDIAS SOLO DIRECIONES BAJAS Y 255 falta acomodar un poco mas
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ3");
+          Serial.println("funion A N?ง3");
         }
         String Nodo_direccion_aux = "";
         Nodo_direccion_aux = funtion_Parmeter1 + funtion_Parmeter2 + funtion_Parmeter3;
@@ -559,7 +563,7 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="4"){
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ4");
+          Serial.println("funion A N?ง4");
         }
         String Nodo_destino_aux = "";
         Nodo_destino_aux = funtion_Parmeter1+funtion_Parmeter2+funtion_Parmeter3;
@@ -568,13 +572,13 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="5"){
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ5: Modo Continuo");
+          Serial.println("funion A N?ง5: Modo Continuo");
           a5_Nodo_Modo_Continuo(x1);
         }
       }
       if (funtion_Mode=="A" && funtion_Number=="6"){
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ6: Numero de Nodos");
+          Serial.println("funion A N?ง6: Numero de Nodos");
         }
         String Nodos_numeros_aux = funtion_Parmeter1+funtion_Parmeter2;
         int Nodos_numeros = Nodos_numeros_aux.toInt();
@@ -582,12 +586,12 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="7"){
         if(flag_F_depurar){
-          Serial.println("funion A Nยบ7 Modo Depurar");
+          Serial.println("funion A N?ง7 Modo Depurar");
         }
         a7(x1);
       }
       if (funtion_Mode=="A" && funtion_Number=="8"){
-        Serial.println("funion A Nยบ8 Status");
+        Serial.println("funion A N?ง8 Status");
         //1.
         Serial.print("Direccion Local: ");
         Serial.println(localAddress);
@@ -638,59 +642,61 @@ void loop(){
       //
       if (funtion_Mode=="B" && funtion_Number=="1"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ1: Quien envia?");
+          Serial.println("funion B N?ง1: Quien envia?");
         }
         b1();
       }
       if (funtion_Mode=="B" && funtion_Number=="2"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ2: Preparo informacion propia");
+          Serial.println("funion B N?ง2: Preparo informacion propia");
         }
         b2();
       }
       if (funtion_Mode=="B" && funtion_Number=="3"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ3:  info recibida ");
+          Serial.println("funion B N?ง3:  info recibida ");
         }
         b3();
       }
       if (funtion_Mode=="B" && funtion_Number=="4"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ4");
+          Serial.println("funion B N?ง4");
         }
         b4();
       }
       if (funtion_Mode=="B" && funtion_Number=="5"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ5");
+          Serial.println("funion B N?ง5");
         }
         b5();
       }
       if (funtion_Mode=="B" && funtion_Number=="6"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ6");
+          Serial.println("funion B N?ง6");
         }
         b6();
       }        
       if (funtion_Mode=="B" && funtion_Number=="7"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ7");
+          Serial.println("funion B N?ง7");
         }
         flag_F_masterNodo=true;
         flag_F_PAQUETE=true;
         function_Remote=inputString.substring(3);   // Extraemos la Funcion a Enviar de la Cadena.
+        Serial.print("Function Code: ");
+        Serial.println(function_Remote);
         Nodo_destino=x1;
       }
       if (funtion_Mode=="B" && funtion_Number=="8"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ8");
+          Serial.println("funion B N?ง8");
         }
         flag_F_nodoRequest=true;
         flag_F_PAQUETE=true;
       }     
       if (funtion_Mode=="B" && funtion_Number=="9"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ9");
+          Serial.println("funion B N?ง9");
         }
         flag_F_masteRequest=true;
         codigo=inputString.substring(2);
@@ -698,13 +704,13 @@ void loop(){
       }     
       if (funtion_Mode=="B" && funtion_Number=="0"){
         if(flag_F_depurar){
-          Serial.println("funion B Nยบ0");
+          Serial.println("funion B N?ง0");
         }
         b0();
       }                            
     // Function tipo C.
       if (funtion_Mode=="C" && funtion_Number=="1"){
-        Serial.println("funion C Nยบ1: updateServer");
+        Serial.println("funion C N?ง1: updateServer");
         c1(x2);
       }
       else{
@@ -1059,7 +1065,6 @@ void loop(){
           b3();
       }
       
-      
       //_____________Modo MASTER__________________________
       // Modo MASTRER Principal (INICA LA TRANSMISION)
       if(localAddress==master             && flag_F_masteRequest){
@@ -1076,10 +1081,6 @@ void loop(){
         temporizador_2.once_ms(fastTime, ISR_temporizador_2);
         flag_F_T2_run=true;
       }
-      // if(localAddress==master             && flag_F_Nodos_Incompletos){
-      //   b0();
-      // }
-      //
       if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
         temporizador_1.attach(waitTime, ISR_temporizador_1);
         flag_F_T1_run=true;
@@ -1180,7 +1181,7 @@ void loop(){
     void actualizar(){
       //Procedimiento
         //1. Estado de Zonas Normalmente en Zero 0 y Activas en Uno 1
-        //2. Borrar estados actuales de entradas รณ Zonas Locales.
+        //2. Borrar estados actuales de entradas ?? Zonas Locales.
         //3. Conservar estados de Entradas de los demas Nodos Aplicando Una and.
         //4. Actualizo estados Propios en el mensaje de Salida con una OR.
       
@@ -1227,7 +1228,8 @@ void loop(){
           Nodos_LSB_str |=Nodos_LSB_ACK;
       
         //-2.5 Sumatoria de Nodos Entrantes.
-          nodos_LSB_MERGE = Nodos_LSB_ACK | incoming_nodosLSB;
+          nodos_LSB_MERGE = Nodos_LSB_ACK;
+          nodos_LSB_MERGE |= incoming_nodosLSB;
         //-2.6 Start Nodo waiting. funciona solo para los nodos.
           if(!flag_F_Nodo_Iniciado){
             Nodo_waiting=true;
@@ -1350,11 +1352,13 @@ void loop(){
               }
             }
           }
+      //5 Flag clear Timer 1 and 2.
+        flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
     void RFM95_recibir(int packetSize){
-      if (packetSize == 0) return;        // if there's no packet, returnยบ1
+      if (packetSize == 0) return;        // if there's no packet, return?ง1
       // read packet header bytes:
       incoming_recipient = LoRa.read();    // incoming_recipient address
       incoming_sender    = LoRa.read();    // incoming_sender address
@@ -1377,13 +1381,13 @@ void loop(){
       
 
       // if the incoming_recipient isn't this device or broadcast,
-      // if (incoming_recipient != localAddress && incoming_recipient != 0xFF) {
-      //   Serial.println("Sent to: 0x" + String(incoming_recipient, HEX));
-      //   if(flag_F_depurar){
-      //     Serial.println("This message is not for me.");
-      //   }
-      //   // return;                             // skip rest of function
-      // }
+      if (incoming_recipient != localAddress && incoming_recipient > 0 && incoming_sender == 0xFF) {
+        Serial.println("Sent to: 0x" + String(incoming_recipient, HEX));
+        if(flag_F_depurar){
+          Serial.println("This message is not for me.");
+        }
+        return;                             // skip rest of function
+      }
       // if message is for this device, or broadcast, print details:
       if(flag_F_depurar){
         Serial.println("Received from: 0x" + String(incoming_sender, HEX));
@@ -1400,9 +1404,12 @@ void loop(){
       inputString=incoming_function;
       falg_ISR_stringComplete=true;
       flag_F_PAQUETE=true;
-      flag_F_updateServer=true;
+      
       if(inputString.endsWith("R")){
         flag_F_responder=false;
+      }
+      if(localAddress==255){
+        flag_F_updateServer=true;
       }
     }
   //-5.2 RFM95 ENVIAR.
@@ -1436,7 +1443,7 @@ void loop(){
 
       flag_F_tokenTime=false;
       flag_F_cycleTime=false;
-      Nodo_waiting=false;             // El Nodo ya se iniciรณ.
+      Nodo_waiting=false;             // El Nodo ya se inici??.
       // eventos
         flag_F_Nodo_Iniciado=true;
         flag_F_respondido=true;
