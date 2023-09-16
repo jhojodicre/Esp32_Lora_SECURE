@@ -1316,7 +1316,6 @@ void loop(){
           }
         // MOSTAR
           Heltec.display->display();
-          delay(20);
     }
   //-4.5 Analizar.
     void analizar(){
