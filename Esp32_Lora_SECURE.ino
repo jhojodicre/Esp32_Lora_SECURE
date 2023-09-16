@@ -2,7 +2,7 @@
   //- 1.1 Librerias****
     #include <Ticker.h>
     #include <SPI.h>
-    #include "heltec.h"
+    #include <heltec.h>
     // #include "images.h"
     
 //2. Definicion de Pinout.
@@ -206,7 +206,7 @@
 
     // Variable para Enviar.
       byte        destination   = 0x01; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF; // address of this device           a3
+      byte        localAddress  = 0x01; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -1308,9 +1308,8 @@ void loop(){
             Heltec.display->drawString(25, 50, String(elapseTime_GAP, DEC));
 
 
-
-            Heltec.display->drawString(55,50, String(Nodos_LSB_ACK, BIN));
-            Heltec.display->drawString(55,50, "#");            
+        // Nodos reconocidos Propiamente.
+            Heltec.display->drawString(60,50, String(Nodos_LSB_ACK, BIN));
 
           }
         // MOSTAR
