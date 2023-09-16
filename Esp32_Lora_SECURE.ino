@@ -206,7 +206,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x03 ; // address of this device           a3
+      byte        localAddress  = 0x01 ; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
