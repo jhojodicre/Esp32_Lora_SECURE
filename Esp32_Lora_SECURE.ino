@@ -1316,7 +1316,7 @@ void loop(){
           }
         // MOSTAR
           Heltec.display->display();
-          delay(100);
+          delay(20);
     }
   //-4.5 Analizar.
     void analizar(){
@@ -1445,7 +1445,7 @@ void loop(){
       flag_F_cycleTime=false;
       Nodo_waiting=false;             // El Nodo ya se inici??.
       // eventos
-        flag_F_Nodo_Iniciado=true;
+        // flag_F_Nodo_Iniciado=true; //
         flag_F_respondido=true;
       
       incoming_sender=0;
