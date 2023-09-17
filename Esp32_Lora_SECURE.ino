@@ -94,6 +94,8 @@
     bool          flag_F_token=false;               // Se habilita caundo el nodo responde por token
     bool          flag_F_analizar=false;
     bool          Nodo_waiting=false;
+    bool          flag_F_totalTime=false;
+    bool          flag_F_contar_tiempo=false;
   
   //-3.3 Variables NODOS y ZONAS.
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
@@ -181,6 +183,7 @@
       float       wakeUpTime = 90.0;
       long        firstTime;
       long        tokenLast;
+      long        totalTime;
       long        waitTime   = 0;
       uint32_t    remainT1;
       uint32_t    remainT2;
@@ -206,7 +209,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x01 ; // address of this device           a3
+      byte        localAddress  = 0xFF ; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -413,18 +416,12 @@ void loop(){
     //-4.2 F- Timer 1.
       if(flag_ISR_temporizador_1){
         analizar();
+        flag_F_contar_tiempo=true;
         //MASTER
-          // if(localAddress==255 && flag_F_Nodos_Completos==false){
-          //   if(!flag_F_masterIniciado){
-          //     b1();
-          //   }
-          //   else{
-          //     b2();
-          //   }
-          //   flag_F_responder=true;
-          //   flag_F_PAQUETE=false;
-          //   codigo="TC";
-          // }
+        if(localAddress==255 && !flag_F_masterIniciado){
+          b1();
+          flag_F_responder=true;
+          }
         //NODOS.
         if(localAddress<255 && !flag_F_nodo_Anterior){
           b6();
@@ -1096,7 +1093,7 @@ void loop(){
       Serial.println(incoming_function);
 
       if(Nodos_LSB_ACK==15){
-        if(Nodos_LSB_ACK==0){
+        if(Zonas_LSB_Estados==0){
           Serial.println("SEC,ALL,0,0");
           return;
         }
@@ -1239,8 +1236,7 @@ void loop(){
           if(incoming_sender==Nodo_anterior){
             flag_F_nodo_Anterior=true;
           }
-       
-          
+
         }
 
 
@@ -1319,6 +1315,7 @@ void loop(){
     }
   //-4.5 Analizar.
     void analizar(){
+
       //1 Nodos Leidos
         if(Nodos_LSB_ACK>=14){
           flag_F_Nodos_Completos=true;
