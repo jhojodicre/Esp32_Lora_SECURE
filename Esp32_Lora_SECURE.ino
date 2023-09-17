@@ -17,8 +17,7 @@
   
     #define PB_zonas_in   0         // Entrada de Pulsador PB_zonas_in.
     #define PB_ZA_in      38        //
-    #define PB_ZB_in      39        // 
-
+    #define PB_ZB_in      39        //
   //-2.2 Definicion de etiquetas para las Salidas.
     #define LED_azul      2
 
@@ -53,7 +52,8 @@
     volatile bool flag_ISR_temporizador_2=false;
     volatile bool flag_ISR_temporizador_3=false;        // pra actualizar los dato al servidor.
     volatile bool flag_ISR_temporizador_0=false;
-  
+    volatile bool flag_ISR_LORA=false;
+
     String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
@@ -96,6 +96,7 @@
     bool          Nodo_waiting=false;
     bool          flag_F_totalTime=false;
     bool          flag_F_contar_tiempo=false;
+
   
   //-3.3 Variables NODOS y ZONAS.
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
@@ -246,21 +247,21 @@
       }
     }
   //-5.2 Extern Function
-    ICACHE_RAM_ATTR void ISR_0(){
-      flag_ISR_prueba=true;
-      Zonas=0;
+    // ICACHE_RAM_ATTR void ISR_0(){
+    //   flag_ISR_prueba=true;
+    //   Zonas=0;
 
-    }
-    ICACHE_RAM_ATTR void ISR_1(){
-    }
-    ICACHE_RAM_ATTR void ISR_2(){
-    }
-    ICACHE_RAM_ATTR void ISR_3(){
-      bitClear(Zonas, Zona_A);
-    }
-    ICACHE_RAM_ATTR void ISR_4(){
-      bitClear(Zonas, Zona_B);
-    }
+    // }
+    // ICACHE_RAM_ATTR void ISR_1(){
+    // }
+    // ICACHE_RAM_ATTR void ISR_2(){
+    // }
+    // ICACHE_RAM_ATTR void ISR_3(){
+    //   bitClear(Zonas, Zona_A);
+    // }
+    // ICACHE_RAM_ATTR void ISR_4(){
+    //   bitClear(Zonas, Zona_B);
+    // }
   //-5.3 Interrupciones por Timers.
     void ISR_temporizador_0(){
       // flag_ISR_temporizador_0=true;
@@ -359,7 +360,7 @@ void setup(){
       // attachInterrupt (digitalPinToInterrupt (Zona_B_in), ISR_2, FALLING);      // attach interrupt handler for D2
       // attachInterrupt (digitalPinToInterrupt (PB_ZA_in), ISR_3, FALLING);      // attach interrupt handler for D2
       // attachInterrupt (digitalPinToInterrupt (PB_ZB_in), ISR_4, FALLING);      // attach interrupt handler for D2
-      
+
       //interrupts ();
 
   //4. Prueba de Sitema Minimo Configurado.
@@ -369,6 +370,9 @@ void setup(){
   //5. Configuracion de DEVICE externos.
     //-5.1 WIFI ESP32 LORA Configuracion.
       Heltec.begin(true /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, RFM95_FREQ /*long BAND*/);
+      
+      LoRa.onReceive(RFM95_recibir);
+      LoRa.receive();
     //-5.2 OLED Display.
       // Heltec.display->init();
       // Heltec.display->flipScreenVertically();        // Invierte el Orden de La LCD
@@ -379,8 +383,8 @@ void setup(){
       // Heltec.display->drawString(0, 0, "Heltec.LoRa Initial success!");
       Heltec.display->drawString(0, 10, "Wait for incoming_function data...");
       Heltec.display->display();
-      delay(1000);
-
+      delay(100);
+  
 }
 void loop(){
   //1. Bienvenida Funcion
