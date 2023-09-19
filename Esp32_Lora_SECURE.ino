@@ -370,9 +370,6 @@ void setup(){
   //5. Configuracion de DEVICE externos.
     //-5.1 WIFI ESP32 LORA Configuracion.
       Heltec.begin(true /*DisplayEnable Enable*/, true /*Heltec.LoRa Enable*/, true /*Serial Enable*/, true /*PABOOST Enable*/, RFM95_FREQ /*long BAND*/);
-      
-      LoRa.onReceive(RFM95_recibir);
-      LoRa.receive();
     //-5.2 OLED Display.
       // Heltec.display->init();
       // Heltec.display->flipScreenVertically();        // Invierte el Orden de La LCD
@@ -540,20 +537,20 @@ void loop(){
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
         if(flag_F_depurar){
-          Serial.println("funion A N?§001");
+          Serial.println("funion A N?ï¿½001");
         }  
         a1_Nodo_Destellos(x1,x2);
       }
       if (funtion_Mode=="A" && funtion_Number=="2"){
         if(flag_F_depurar){
-          Serial.println("funion A N?§2");
+          Serial.println("funion A N?ï¿½2");
         }
         a2();
       }
       if (funtion_Mode=="A" && funtion_Number=="3"){
         // FUNCIONO A MEDIAS SOLO DIRECIONES BAJAS Y 255 falta acomodar un poco mas
         if(flag_F_depurar){
-          Serial.println("funion A N?§3");
+          Serial.println("funion A N?ï¿½3");
         }
         String Nodo_direccion_aux = "";
         Nodo_direccion_aux = funtion_Parmeter1 + funtion_Parmeter2 + funtion_Parmeter3;
@@ -564,7 +561,7 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="4"){
         if(flag_F_depurar){
-          Serial.println("funion A N?§4");
+          Serial.println("funion A N?ï¿½4");
         }
         String Nodo_destino_aux = "";
         Nodo_destino_aux = funtion_Parmeter1+funtion_Parmeter2+funtion_Parmeter3;
@@ -573,13 +570,13 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="5"){
         if(flag_F_depurar){
-          Serial.println("funion A N?§5: Modo Continuo");
+          Serial.println("funion A N?ï¿½5: Modo Continuo");
           a5_Nodo_Modo_Continuo(x1);
         }
       }
       if (funtion_Mode=="A" && funtion_Number=="6"){
         if(flag_F_depurar){
-          Serial.println("funion A N?§6: Numero de Nodos");
+          Serial.println("funion A N?ï¿½6: Numero de Nodos");
         }
         String Nodos_numeros_aux = funtion_Parmeter1+funtion_Parmeter2;
         int Nodos_numeros = Nodos_numeros_aux.toInt();
@@ -587,12 +584,12 @@ void loop(){
       }
       if (funtion_Mode=="A" && funtion_Number=="7"){
         if(flag_F_depurar){
-          Serial.println("funion A N?§7 Modo Depurar");
+          Serial.println("funion A N?ï¿½7 Modo Depurar");
         }
         a7(x1);
       }
       if (funtion_Mode=="A" && funtion_Number=="8"){
-        Serial.println("funion A N?§8 Status");
+        Serial.println("funion A N?ï¿½8 Status");
         //1.
         Serial.print("Direccion Local: ");
         Serial.println(localAddress);
@@ -643,43 +640,43 @@ void loop(){
       //
       if (funtion_Mode=="B" && funtion_Number=="1"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§1: Quien envia?");
+          Serial.println("funion B N?ï¿½1: Quien envia?");
         }
         b1();
       }
       if (funtion_Mode=="B" && funtion_Number=="2"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§2: Preparo informacion propia");
+          Serial.println("funion B N?ï¿½2: Preparo informacion propia");
         }
         b2();
       }
       if (funtion_Mode=="B" && funtion_Number=="3"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§3:  info recibida ");
+          Serial.println("funion B N?ï¿½3:  info recibida ");
         }
         b3();
       }
       if (funtion_Mode=="B" && funtion_Number=="4"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§4");
+          Serial.println("funion B N?ï¿½4");
         }
         b4();
       }
       if (funtion_Mode=="B" && funtion_Number=="5"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§5");
+          Serial.println("funion B N?ï¿½5");
         }
         b5();
       }
       if (funtion_Mode=="B" && funtion_Number=="6"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§6");
+          Serial.println("funion B N?ï¿½6");
         }
         b6();
       }        
       if (funtion_Mode=="B" && funtion_Number=="7"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§7");
+          Serial.println("funion B N?ï¿½7");
         }
         flag_F_masterNodo=true;
         flag_F_PAQUETE=true;
@@ -690,14 +687,14 @@ void loop(){
       }
       if (funtion_Mode=="B" && funtion_Number=="8"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§8");
+          Serial.println("funion B N?ï¿½8");
         }
         flag_F_nodoRequest=true;
         flag_F_PAQUETE=true;
       }     
       if (funtion_Mode=="B" && funtion_Number=="9"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§9");
+          Serial.println("funion B N?ï¿½9");
         }
         flag_F_masteRequest=true;
         codigo=inputString.substring(2);
@@ -705,13 +702,13 @@ void loop(){
       }     
       if (funtion_Mode=="B" && funtion_Number=="0"){
         if(flag_F_depurar){
-          Serial.println("funion B N?§0");
+          Serial.println("funion B N?ï¿½0");
         }
         b0();
       }                            
     // Function tipo C.
       if (funtion_Mode=="C" && funtion_Number=="1"){
-        Serial.println("funion C N?§1: updateServer");
+        Serial.println("funion C N?ï¿½1: updateServer");
         c1(x2);
       }
       else{
@@ -1358,7 +1355,7 @@ void loop(){
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
     void RFM95_recibir(int packetSize){
-      if (packetSize == 0) return;        // if there's no packet, return?§1
+      if (packetSize == 0) return;        // if there's no packet, return?ï¿½1
       // read packet header bytes:
       incoming_recipient = LoRa.read();    // incoming_recipient address
       incoming_sender    = LoRa.read();    // incoming_sender address

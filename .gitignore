@@ -4,4 +4,4 @@ notas.txt
 carpeta_prueba_ignorar/
 data/
 .vscode/
-vscode/
+build/
