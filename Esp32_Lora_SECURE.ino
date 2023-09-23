@@ -101,6 +101,8 @@
   //-3.3 Variables NODOS y ZONAS.
       int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       byte        master=0xFF;
+      int         Nodos_leidos;         // NODS Y MASTER -1
+      float       Nodos_leidos_aux;
       byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
       byte        Nodo_anterior;
       byte        Nodo_actual=0;
@@ -109,7 +111,7 @@
       byte        Nodo_destino;
       word        Nodos_LSB_ACK;
       int         Nodos_LSB_str;
-      
+      int         Nodos_y_Master;
       String      Nodo_Name;
       byte        nodos_LSB_MERGE;           // variable para igualar el dato de los nodos reportados
       byte        nodos_MSB_MERGE;
@@ -303,6 +305,8 @@ void setup(){
     //-2.2 Valores y Espacios de Variables.
       Nodo_primero    = 1;
       Nodo_ultimo     = Nodos;
+      Nodos_y_Master  = Nodos +1;    // Numero de Nodos + Master.
+      Nodos_leidos    = Nodos_y_Master -1;
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
@@ -348,6 +352,9 @@ void setup(){
       bitClear(Zonas_Mascaras, Zona_B);
       Zonas_LSB_Mascara=lowByte(Zonas_Mascaras);
       Zonas_MSB_Mascara=highByte(Zonas_Mascaras);
+    //-2.5 Nodos a Leer.
+      Nodos_leidos_aux = pow(2, Nodos_y_Master);
+
   //3. Configuracion de Perifericos:
     //-3.1 Comunicacion Serial:
       Serial.begin(9600);
@@ -433,17 +440,7 @@ void loop(){
       }
     //-4.3 F- Timer 2.
       if(flag_ISR_temporizador_2){
-        beforeTime_2=0;
-
-        if(flag_F_depurar){
-          Serial.print("ET2: ");
-          Serial.println(elapseTime_2);
-          Serial.print("CT2: ");
-          Serial.println(currentTime_2);
-          Serial.print("BT2: ");
-          Serial.println(beforeTime_2);
-          beforeTime_2 = currentTime_2;
-        }     
+        beforeTime_2=0;   
         flag_F_tokenTime=true;
         flag_F_responder=true;
         codigo="TK";
@@ -629,6 +626,9 @@ void loop(){
         //10.
         Serial.print("masterTime: ");
         Serial.println(masterTime);
+        //11.
+        Serial.print("Nodos Leidos: ");
+        Serial.println(Nodos_leidos_aux);        
       }
       if (funtion_Mode=="A" && funtion_Number=="9"){
         ESP.restart();
@@ -800,7 +800,6 @@ void loop(){
       bitSet(zonesLSB, incoming_sender);
       zonesMSB=0;
     }
-
   //-3.2 Funciones tipo B.
     // Identifico quien Envia el Mensaje Byte
       void b0 (){
@@ -975,7 +974,6 @@ void loop(){
       }
     }
 
-
 //4. Funciones UPDATE.
   //-4.1 Estados de Zonas.
     void reviso(){
@@ -1092,7 +1090,7 @@ void loop(){
       Serial.print(incoming_sender);
       Serial.print(" ");
       Serial.println(incoming_function);
-
+    //-4.3.1 SI HE LEIDO TODOS LOS NODOS
       if(Nodos_LSB_ACK==15){
         if(Zonas_LSB_Estados==0){
           Serial.println("SEC,ALL,0,0");
@@ -1101,6 +1099,7 @@ void loop(){
       }
       // Nodo 1.
         if(bitRead(Nodos_LSB_ACK, 1)){
+        //-1.1 Zonas NO OK.  
           if(bitRead(Zonas_LSB_Estados, P1ZA) && zona_1_err==false){
             Serial.println("SEC,NOK,1,A");
           }
@@ -1108,7 +1107,7 @@ void loop(){
             Serial.println("SEC,NOK,1,B");
           }
 
-
+        //-1.2 Zonas Falla Constante
           if(bitRead(Zonas_LSB_Estados, P1ZA) && zona_1_err){
             Serial.println("SEC,ERR,1,A");
           }
@@ -1116,7 +1115,7 @@ void loop(){
             Serial.println("SEC,ERR,1,B");
           }
 
-
+        //-1.3 Zonas OK
           if(!bitRead(Zonas_LSB_Estados, P1ZA)){
             Serial.println("SEC,BOK,1,A");
             zona_1_err=false;
@@ -1318,7 +1317,7 @@ void loop(){
     void analizar(){
 
       //1 Nodos Leidos
-        if(Nodos_LSB_ACK>=14){
+        if(Nodos_LSB_ACK>=Nodos_leidos){
           flag_F_Nodos_Completos=true;
         }
 
@@ -1455,3 +1454,9 @@ void loop(){
         Serial.println(".");
       }
     }
+// Puerto de Conexion.
+    //COM:    Device:
+    //8       Master
+    //3       Nodo 1.
+    //5       Nodo 2.
+    //6       Nodo 3.
