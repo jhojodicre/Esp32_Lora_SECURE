@@ -212,7 +212,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF ; // address of this device           a3
+      byte        localAddress  = 0x01 ; // address of this device           a3
       byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
@@ -1446,9 +1446,11 @@ void loop(){
       
       incoming_sender=0;
       incoming_recipient=0;
+      //NODO+-+-+-+-
       //Borrar datos leidos porcada ciclo de lectura de todos los nodos.
-      // Nodos_LSB_ACK=0;
-      // nodos_LSB_MERGE=0;
+      if(localAddress<255)
+        Nodos_LSB_ACK=0;
+        nodos_LSB_MERGE=0;
       // DEBUG
       if(flag_F_depurar){
         Serial.println(".");
