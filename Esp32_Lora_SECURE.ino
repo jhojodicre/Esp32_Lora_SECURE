@@ -1290,57 +1290,63 @@ void loop(){
           
         // LIMPIO PANTALLA
           Heltec.display->clear();
-        // NODO INFORMACION
+        //0 NODO INFORMACION
           Heltec.display->drawString(0, 0, Nodo_Name);
           Heltec.display->drawString(50, 0, String(localAddress, DEC));
           Heltec.display->drawString(70, 0, "RX:");
           Heltec.display->drawString(87, 0, String(incoming_sender, DEC));
-        // CODIGO DE MENSAJE
+          // CODIGO DE MENSAJE
           Heltec.display->drawString(107, 0, incoming_function);
-        // ZONAS MENSAJE ENTRANTE
+        //1 ZONAS MENSAJE ENTRANTE
           Heltec.display->drawString(0, 10, "ZONAS:");
           Heltec.display->drawString(50, 10, "87654321");
+        //2  
           Heltec.display->drawString(0, 20, "SUMA:");
-          Heltec.display->drawString(45, 20, String(ZonasF_LSB_str, BIN));
+          Heltec.display->drawString(45, 20, String(Zonas_LSB_str, BIN));
           Heltec.display->drawString(45, 20, "#");
-        // ZONA LOCAL TIMER 1 Y 2 TIEMPO TRANSCURRIDO
+        //3 ZONA LOCAL TIMER 1 Y 2 TIEMPO TRANSCURRIDO
           // Heltec.display->drawString(0, 30, "LOCAL:");
           // Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
-          Heltec.display->drawString(0, 30, "T1:");
-          Heltec.display->drawString(17,30, String(elapseTime_1, DEC)); 
-          Heltec.display->drawString(65,30, "T2:");
-          Heltec.display->drawString(80,30, String(elapseTime_2, DEC));          
-        // Error de Zona.
-          // Heltec.display->drawString(65,30, String(zona_1, DEC));
 
-        // NODOS COMPLETOS
+          // Heltec.display->drawString(0, 30, "T1:");
+          // Heltec.display->drawString(17,30, String(elapseTime_1, DEC)); 
+          // Heltec.display->drawString(65,30, "T2:");
+          // Heltec.display->drawString(80,30, String(elapseTime_2, DEC));          
+          
+          Heltec.display->drawString(70, 30, String(ZonasF_LSB_str, BIN));
+          Heltec.display->drawString(0, 30, String(Zonas_Fallan, BIN));
+
+          // NODOS COMPLETOS
           // Heltec.display->drawString(75,30, String("Nds: "));
           // Heltec.display->drawString(99,30, String(flag_F_Nodos_Completos, DEC));
-        // Nodos Leidos.
-          Heltec.display->drawString(0, 40, "NODOS:");
-          Heltec.display->drawString(45,40, String(Nodos_LSB_str, BIN));
-          Heltec.display->drawString(45,40, "#");
-        // ZONA A
-          if(localAddress<255){
-            Heltec.display->drawString(0, 50, "ZA:");
-            Heltec.display->drawString(16,50, Zona_A_str);
-        // ZONA B
-            Heltec.display->drawString(25, 50, "ZB:");
-            Heltec.display->drawString(41, 50, Zona_B_str);
-        // PULSADOR A
-            Heltec.display->drawString(55, 50, "PA:");
-            Heltec.display->drawString(72, 50, Zona_B_PB_str);
-        // PULSADOR B
-            Heltec.display->drawString(85, 50, "PB:");
-            Heltec.display->drawString(101, 50, Zona_A_PB_str);
-          }
-          else{
-        // Tiempo Transcurrido para el Master entre mensajes recibidos.    
+        
+        //4 Nodos Leidos.
+          // Heltec.display->drawString(0, 40, "NODOS:");
+          // Heltec.display->drawString(45,40, String(Nodos_LSB_str, BIN));
+          // Heltec.display->drawString(45,40, "#");
+          
+          // Error de Zona.
+          Heltec.display->drawString(65,40, String(zona_1, DEC));
+        //5
+          // ZONA A
+            if(localAddress<255){
+              Heltec.display->drawString(0, 50, "ZA:");
+              Heltec.display->drawString(16,50, Zona_A_str);
+          // ZONA B
+              Heltec.display->drawString(25, 50, "ZB:");
+              Heltec.display->drawString(41, 50, Zona_B_str);
+          // PULSADOR A
+              Heltec.display->drawString(55, 50, "PA:");
+              Heltec.display->drawString(72, 50, Zona_B_PB_str);
+          // PULSADOR B
+              Heltec.display->drawString(85, 50, "PB:");
+              Heltec.display->drawString(101, 50, Zona_A_PB_str);
+            }
+            else{
+          // Tiempo Transcurrido para el Master entre mensajes recibidos.    
             Heltec.display->drawString(0, 50, "TGM:");
             Heltec.display->drawString(25, 50, String(elapseTime_GAP, DEC));
-
-
-        // Nodos reconocidos Propiamente.
+          // Nodos reconocidos Propiamente.
             Heltec.display->drawString(60,50, String(Nodos_LSB_ACK, BIN));
 
           }
@@ -1364,19 +1370,19 @@ void loop(){
       //4 FALLA CONSTANTE.
         // ZONA_A
           if(!Zona_A_ST && !zona_1_err){
-              ++ zona_1 ;
-              if(zona_1==15){
-                zona_1=0;
-                zona_1_err=true;
-              }
+            ++ zona_1 ;
+            if(zona_1==15){
+              zona_1=0;
+              zona_1_err=true;
+            }
           }
         // ZONA_B.
           if(!Zona_B_ST && !zona_2_err){
-              ++ zona_2 ;
-              if(zona_2==15){
-                zona_2=0;
-                zona_2_err=true;
-              }
+             ++ zona_2 ;
+             if(zona_2==15){
+               zona_2=0;
+               zona_2_err=true;
+             }
           }
           if(zona_1_err){
             bitSet(Zonas_Fallan, Zona_A);
