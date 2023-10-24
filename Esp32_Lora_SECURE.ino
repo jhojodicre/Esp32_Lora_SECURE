@@ -127,6 +127,7 @@
       int         Zonas_LSB_str=8;
       int         Zonas_MSB_str=8;
 
+
       int         Zona_A;
       int         Zona_B;
       bool        Zona_A_ST;
@@ -138,6 +139,15 @@
       bool        Zonas_Aceptadas;
       String      Zona_A_PB_str;
       String      Zona_B_PB_str;
+
+      word        Zonas_Fallan;
+      byte        Zonas_Fallan_LSB;
+      byte        Zonas_Fallan_MSB;
+      
+      byte        ZonasF_LSB_Estados;
+      byte        ZonasF_MSB_Estados;
+
+      int         ZonasF_LSB_str;
 
       // TIEMPO DE ZONA EN FALLA.
       int        zona_1;
@@ -205,6 +215,8 @@
       byte        incoming_zonesMSB;     // incoming_function msg ID
       byte        incoming_nodosLSB;
       byte        incoming_nodosMSB;
+      byte        incoming_zonaFLSB;
+      byte        incoming_zonaFMSB;
       byte        incoming_nodoInfo;
       byte        incoming_length;       // incoming_function msg length
       String      incoming_function = "";
@@ -213,11 +225,13 @@
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
       byte        localAddress  = 0x01 ; // address of this device           a3
-      byte        nodoInfo;             // informacion particular que envia el nodo
       byte        zonesLSB;
       byte        zonesMSB;
       byte        nodosLSB;
       byte        nodosMSB;
+      byte        zonaFLSB;
+      byte        zonaFMSB;
+      byte        nodoInfo;             // informacion particular que envia el nodo
       String      outgoing;             // outgoing message
       byte        msgNumber;            // en modo continuo este numero incrementa automaticamente.          // interval between sends.      
     
@@ -801,7 +815,7 @@ void loop(){
       zonesMSB=0;
     }
   //-3.2 Funciones tipo B.
-    // Identifico quien Envia el Mensaje Byte
+    // b0- Identifico quien Envia el Mensaje Byte
       void b0 (){
         // Informacion Acerca de los nodos que pude LEER.
         // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
@@ -922,16 +936,18 @@ void loop(){
       void b6 (){
         // Informacion Acerca de los nodos que pude LEER.
         // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        //1-
         destination=Nodo_siguiente;                           // Respondo a quien me escribe.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
         // 3. Nodos Leidos 1.
-        
+        //-3- -4. Zonas Leidas.
         zonesMSB=Zonas_MSB_Estados;
         zonesLSB=Zonas_LSB_Estados;
-        // 5. Zonas Leidas.
+        //-5. -6. Nodos Leidos.
         nodosLSB=nodos_LSB_MERGE;
-        //6. Codigo.
+        //-7. Nodo_Info.
+        nodoInfo = Zonas_Fallan;
       }
     // b7- Respuesta a Comandos del Maestro.  
       void b7 (){
@@ -1100,29 +1116,27 @@ void loop(){
       // Nodo 1.
         if(bitRead(Nodos_LSB_ACK, 1)){
         //-1.1 Zonas NO OK.  
-          if(bitRead(Zonas_LSB_Estados, P1ZA) && zona_1_err==false){
+          if(bitRead(Zonas_LSB_Estados, P1ZA) && !bitRead(ZonasF_LSB_Estados, P1ZA)){
             Serial.println("SEC,NOK,1,A");
           }
-          if(bitRead(Zonas_LSB_Estados, P1ZB) && zona_2_err==false){
+          if(bitRead(Zonas_LSB_Estados, P1ZB) && !bitRead(ZonasF_LSB_Estados, P1ZB)){
             Serial.println("SEC,NOK,1,B");
           }
 
         //-1.2 Zonas Falla Constante
-          if(bitRead(Zonas_LSB_Estados, P1ZA) && zona_1_err){
+          if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(incoming_zonaFLSB, P1ZA)){
             Serial.println("SEC,ERR,1,A");
           }
-          if(bitRead(Zonas_LSB_Estados, P1ZB) && zona_2_err){
+          if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(incoming_zonaFMSB, P1ZB)){
             Serial.println("SEC,ERR,1,B");
           }
 
         //-1.3 Zonas OK
           if(!bitRead(Zonas_LSB_Estados, P1ZA)){
             Serial.println("SEC,BOK,1,A");
-            zona_1_err=false;
           }
           if(!bitRead(Zonas_LSB_Estados, P1ZB)){
             Serial.println("SEC,BOK,1,B");
-            zona_2_err=false;
           }
         }
 
@@ -1238,9 +1252,29 @@ void loop(){
           }
 
         }
+      //3. Zonas en Falla.
+        Zonas_Fallan_LSB=lowByte(Zonas_Fallan);
+        Zonas_Fallan_MSB=highByte(Zonas_Fallan);
+        
+        // Aplico la Mascara.
+        ZonasF_LSB_Estados=Zonas_LSB_Mascara & incoming_zonaFLSB;
+        ZonasF_MSB_Estados=Zonas_MSB_Mascara & incoming_zonaFMSB;
+
+        // Integro las zonas fallas Locales.
+
+        ZonasF_LSB_Estados |=Zonas_Fallan_LSB;
+        ZonasF_MSB_Estados |=Zonas_Fallan_MSB;
+
+        // Preparamos los datos a ser enviados.
+        zonaFLSB = ZonasF_LSB_Estados;
+        zonaFMSB = ZonasF_MSB_Estados;
+
+        // depurar en OLED.
+        ZonasF_LSB_str = 256;
+        ZonasF_LSB_str |= zonaFLSB;
 
 
-      //3. Pantalla.
+      //4. Pantalla.
         // Tiempo transcurrido para Timer 1
           if(flag_F_T1_run){
             currentTime_1=millis();
@@ -1267,7 +1301,7 @@ void loop(){
           Heltec.display->drawString(0, 10, "ZONAS:");
           Heltec.display->drawString(50, 10, "87654321");
           Heltec.display->drawString(0, 20, "SUMA:");
-          Heltec.display->drawString(45, 20, String(Zonas_LSB_str, BIN));
+          Heltec.display->drawString(45, 20, String(ZonasF_LSB_str, BIN));
           Heltec.display->drawString(45, 20, "#");
         // ZONA LOCAL TIMER 1 Y 2 TIEMPO TRANSCURRIDO
           // Heltec.display->drawString(0, 30, "LOCAL:");
@@ -1328,25 +1362,27 @@ void loop(){
       //3 RESETEO DE NODOS LEIDOS.  
         Nodos_LSB_ACK=0;
       //4 FALLA CONSTANTE.
-        // NODO_1
-          if(bitRead(Zonas_LSB_Estados, P1ZA)){
-            if(!zona_1_err){
+        // ZONA_A
+          if(!Zona_A_ST && !zona_1_err){
               ++ zona_1 ;
-              if(zona_1==5){
+              if(zona_1==15){
                 zona_1=0;
                 zona_1_err=true;
               }
-            }
           }
-        // NODO_2.
-          if(bitRead(Zonas_LSB_Estados, P1ZB)){
-            if(!zona_1_err){
+        // ZONA_B.
+          if(!Zona_B_ST && !zona_2_err){
               ++ zona_2 ;
-              if(zona_2==5){
+              if(zona_2==15){
                 zona_2=0;
                 zona_2_err=true;
               }
-            }
+          }
+          if(zona_1_err){
+            bitSet(Zonas_Fallan, Zona_A);
+          }
+          if(zona_2_err){
+            bitSet(Zonas_Fallan, Zona_B);
           }
       //5 Flag clear Timer 1 and 2.
         flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
@@ -1362,7 +1398,8 @@ void loop(){
       incoming_zonesMSB  = LoRa.read();    // incoming_function msg ID.
       incoming_nodosLSB  = LoRa.read();    // incoming_function Nodos Reportados LSB.
       incoming_nodosMSB  = LoRa.read();    // incoming_function Nodos Reportados MSB.
-      incoming_nodoInfo  = LoRa.read();    // incoming_function Informacion del Nodo Local.
+      incoming_zonaFLSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
+      incoming_zonaFMSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
       incoming_length    = LoRa.read();    // incoming_function msg length
       incoming_function           = "";
       while (LoRa.available()){
@@ -1417,7 +1454,8 @@ void loop(){
       LoRa.write(zonesMSB);           // add message ID
       LoRa.write(nodosLSB);
       LoRa.write(nodosMSB);
-      LoRa.write(nodoInfo);
+      LoRa.write(zonaFLSB);
+      LoRa.write(zonaFMSB);
       LoRa.write(outgoing.length());  // add payload length
       LoRa.print(outgoing);           // add payload
       LoRa.endPacket();               // finish packet and send it
@@ -1456,9 +1494,3 @@ void loop(){
         Serial.println(".");
       }
     }
-// Puerto de Conexion.
-    //COM:    Device:
-    //8       Master
-    //3       Nodo 1.
-    //5       Nodo 2.
-    //6       Nodo 3.
