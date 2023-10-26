@@ -1005,12 +1005,23 @@ void loop(){
       if(!Zonas_Aceptadas){
         bitClear(Zonas, Zona_A);
         bitClear(Zonas, Zona_B);
+
+        bitClear(Zonas_Fallan, Zona_A);
+        bitClear(Zonas_Fallan, Zona_B);
+
+        zona_1_err=false;
+        zona_2_err=false;
       }
       if(!Zona_A_Aceptada){
         bitClear(Zonas, Zona_A);
+        bitClear(Zonas_Fallan, Zona_A);
+        zona_1_err=false;
+
       }
       if(!Zona_B_Aceptada){
         bitClear(Zonas, Zona_B);
+        bitClear(Zonas_Fallan, Zona_B);
+        zona_2_err=false;
       }
 
       // Zonas.
@@ -1327,6 +1338,8 @@ void loop(){
           
           // Error de Zona.
           Heltec.display->drawString(65,40, String(zona_1, DEC));
+          Heltec.display->drawString(85,40, String(zona_2, DEC));
+          
         //5
           // ZONA A
             if(localAddress<255){
@@ -1369,16 +1382,18 @@ void loop(){
         Nodos_LSB_ACK=0;
       //4 FALLA CONSTANTE.
         // ZONA_A
-          if(!Zona_A_ST && !zona_1_err){
-            ++ zona_1 ;
-            if(zona_1==15){
+          if(!Zona_A_ST && !zona_1_err)
+          {
+            ++ zona_1;
+            if(zona_1==15)
+            {
               zona_1=0;
               zona_1_err=true;
             }
           }
         // ZONA_B.
           if(!Zona_B_ST && !zona_2_err){
-             ++ zona_2 ;
+             ++ zona_2;
              if(zona_2==15){
                zona_2=0;
                zona_2_err=true;
@@ -1390,6 +1405,9 @@ void loop(){
           if(zona_2_err){
             bitSet(Zonas_Fallan, Zona_B);
           }
+        // Reset contador
+        if(Zona_A_ST && zona_1>0) zona_1=0;
+        if(Zona_B_ST && zona_2>0) zona_2=0;
       //5 Flag clear Timer 1 and 2.
         flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
     }
