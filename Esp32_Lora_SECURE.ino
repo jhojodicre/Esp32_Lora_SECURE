@@ -148,7 +148,8 @@
       byte        ZonasF_MSB_Estados;
 
       int         ZonasF_LSB_str;
-
+      char        ZonaF_A_str;
+      char        ZonaF_B_str;
       // TIEMPO DE ZONA EN FALLA.
       int        zona_1;
       int        zona_2;
@@ -224,9 +225,10 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x01 ; // address of this device           a3
+      byte        localAddress  = 0xFF; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
+
       byte        nodosLSB;
       byte        nodosMSB;
       byte        zonaFLSB;
@@ -1009,6 +1011,9 @@ void loop(){
         bitClear(Zonas_Fallan, Zona_A);
         bitClear(Zonas_Fallan, Zona_B);
 
+        ZonaF_A_str='.';
+        ZonaF_B_str='.';
+
         zona_1_err=false;
         zona_2_err=false;
       }
@@ -1016,12 +1021,13 @@ void loop(){
         bitClear(Zonas, Zona_A);
         bitClear(Zonas_Fallan, Zona_A);
         zona_1_err=false;
-
+        ZonaF_A_str='.';
       }
       if(!Zona_B_Aceptada){
         bitClear(Zonas, Zona_B);
         bitClear(Zonas_Fallan, Zona_B);
         zona_2_err=false;
+        ZonaF_B_str='.';        
       }
 
       // Zonas.
@@ -1031,11 +1037,11 @@ void loop(){
       if(!Zona_B_ST){
         bitSet(Zonas, Zona_B);
       }
-        Zona_A_str=String(Zona_A_ST, BIN);
-        Zona_B_str=String(Zona_B_ST, BIN);
+        Zona_A_str=String(!Zona_A_ST, BIN);
+        Zona_B_str=String(!Zona_B_ST, BIN);
 
-        Zona_A_PB_str=String(Zona_A_Aceptada, BIN);
-        Zona_B_PB_str=String(Zona_B_Aceptada, BIN);
+        Zona_A_PB_str=String(!Zona_A_Aceptada, BIN);
+        Zona_B_PB_str=String(!Zona_B_Aceptada, BIN);
     }
   //-4.2 Secuencia.
     void secuencia(){
@@ -1285,7 +1291,7 @@ void loop(){
         ZonasF_LSB_str |= zonaFLSB;
 
 
-      //4. Pantalla.
+      //4. Pantalla. (Cada espacio equivale a 8)
         // Tiempo transcurrido para Timer 1
           if(flag_F_T1_run){
             currentTime_1=millis();
@@ -1319,13 +1325,13 @@ void loop(){
           // Heltec.display->drawString(0, 30, "LOCAL:");
           // Heltec.display->drawString(50,30, String(Zonas_LSB, BIN));
 
-          // Heltec.display->drawString(0, 30, "T1:");
-          // Heltec.display->drawString(17,30, String(elapseTime_1, DEC)); 
-          // Heltec.display->drawString(65,30, "T2:");
-          // Heltec.display->drawString(80,30, String(elapseTime_2, DEC));          
+          Heltec.display->drawString(0, 30, "T1:");
+          Heltec.display->drawString(17,30, String(elapseTime_1, DEC)); 
+          Heltec.display->drawString(65,30, "T2:");
+          Heltec.display->drawString(80,30, String(elapseTime_2, DEC));          
           
-          Heltec.display->drawString(70, 30, String(ZonasF_LSB_str, BIN));
-          Heltec.display->drawString(0, 30, String(Zonas_Fallan, BIN));
+          // Heltec.display->drawString(70, 30, String(ZonasF_LSB_str, BIN));
+          // Heltec.display->drawString(0, 30, String(Zonas_Fallan, BIN));
 
           // NODOS COMPLETOS
           // Heltec.display->drawString(75,30, String("Nds: "));
@@ -1336,24 +1342,39 @@ void loop(){
           // Heltec.display->drawString(45,40, String(Nodos_LSB_str, BIN));
           // Heltec.display->drawString(45,40, "#");
           
-          // Error de Zona.
-          Heltec.display->drawString(65,40, String(zona_1, DEC));
-          Heltec.display->drawString(85,40, String(zona_2, DEC));
+          
+          
+          
           
         //5
           // ZONA A
             if(localAddress<255){
               Heltec.display->drawString(0, 50, "ZA:");
               Heltec.display->drawString(16,50, Zona_A_str);
+              // Error de Zona A.
+              if(!zona_1_err){
+
+                Heltec.display->drawString(23,50, String(zona_1, DEC));
+              }
+              else{
+                Heltec.display->drawString(23, 50, String(ZonaF_A_str));
+              }
           // ZONA B
-              Heltec.display->drawString(25, 50, "ZB:");
-              Heltec.display->drawString(41, 50, Zona_B_str);
+              Heltec.display->drawString(35, 50, "ZB:");
+              Heltec.display->drawString(53, 50, Zona_B_str);
+              // Error de Zona B.
+              if(!zona_2_err){
+                Heltec.display->drawString(61,50, String(zona_2, DEC));
+              }
+              else{
+                Heltec.display->drawString(61,50, String(ZonaF_B_str));
+              }
           // PULSADOR A
-              Heltec.display->drawString(55, 50, "PA:");
-              Heltec.display->drawString(72, 50, Zona_B_PB_str);
+              Heltec.display->drawString(75, 50, "PA:");
+              Heltec.display->drawString(93, 50, Zona_B_PB_str);
           // PULSADOR B
-              Heltec.display->drawString(85, 50, "PB:");
-              Heltec.display->drawString(101, 50, Zona_A_PB_str);
+              Heltec.display->drawString(102, 50, "PB:");
+              Heltec.display->drawString(119, 50, Zona_A_PB_str);
             }
             else{
           // Tiempo Transcurrido para el Master entre mensajes recibidos.    
@@ -1401,9 +1422,11 @@ void loop(){
           }
           if(zona_1_err){
             bitSet(Zonas_Fallan, Zona_A);
+            ZonaF_A_str='X';
           }
           if(zona_2_err){
             bitSet(Zonas_Fallan, Zona_B);
+            ZonaF_B_str='X';
           }
         // Reset contador
         if(Zona_A_ST && zona_1>0) zona_1=0;
