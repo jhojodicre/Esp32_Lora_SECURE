@@ -225,7 +225,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x03; // address of this device           a3
+      byte        localAddress  = 0xFF; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -412,10 +412,13 @@ void loop(){
         flag_F_T1_run=true;
       }
       else{
+        b6();
         temporizador_2.once_ms(firstTime, ISR_temporizador_2);
         temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
         beforeTime_1=millis();
         flag_F_T1_run=true;
+        flag_F_T2_run=true;
+        flag_F_Nodo_Iniciado=true;
       }
     }
   //2. Decodificar funcion serial
@@ -441,9 +444,6 @@ void loop(){
     //-4.2 F- Timer 1.
       if(flag_ISR_temporizador_1){
         analizar();
-        if(flag_F_token){
-          flag_F_token=false;
-        }
         //MASTER
         if(localAddress==255 && !flag_F_masterIniciado){
           b1();
@@ -451,13 +451,13 @@ void loop(){
         }
         //NODOS.
           // Responder si No ha recibido el nodo Anterior.
-            if(localAddress<255 && !flag_F_token){
+            if (localAddress<255 && !flag_F_token){
               b6();
               flag_F_responder=true;
               flag_F_PAQUETE=false;
               codigo="TC";
             }
-            if(flag_F_token){
+            if (flag_F_token){
               flag_F_token=false;
             }
       }
