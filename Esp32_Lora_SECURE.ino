@@ -225,7 +225,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF; // address of this device           a3
+      byte        localAddress  = 0x03; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -289,12 +289,7 @@
     }
     void ISR_temporizador_1(){
         beforeTime_1 = millis();
-        if(flag_F_token){
-          flag_F_token=false;
-          return;
-        }
         flag_ISR_temporizador_1=true;
-
     }
     void ISR_temporizador_2(){
       currentTime_2 = millis();
@@ -373,7 +368,7 @@ void setup(){
 
   //3. Configuracion de Perifericos:
     //-3.1 Comunicacion Serial:
-      Serial.begin(9600);
+      Serial.begin(115200);
       delay(10);
     
     //-3.2 Interrupciones Habilitadas.
@@ -416,6 +411,12 @@ void loop(){
         beforeTime_1=millis();
         flag_F_T1_run=true;
       }
+      else{
+        temporizador_2.once_ms(firstTime, ISR_temporizador_2);
+        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+        beforeTime_1=millis();
+        flag_F_T1_run=true;
+      }
     }
   //2. Decodificar funcion serial
     if(falg_ISR_stringComplete){
@@ -440,19 +441,25 @@ void loop(){
     //-4.2 F- Timer 1.
       if(flag_ISR_temporizador_1){
         analizar();
-        flag_F_contar_tiempo=true;
+        if(flag_F_token){
+          flag_F_token=false;
+        }
         //MASTER
         if(localAddress==255 && !flag_F_masterIniciado){
           b1();
           flag_F_responder=true;
-          }
-        //NODOS.
-        if(localAddress<255 && !flag_F_nodo_Anterior){
-          b6();
-          flag_F_responder=true;
-          flag_F_PAQUETE=false;
-          codigo="TC";
         }
+        //NODOS.
+          // Responder si No ha recibido el nodo Anterior.
+            if(localAddress<255 && !flag_F_token){
+              b6();
+              flag_F_responder=true;
+              flag_F_PAQUETE=false;
+              codigo="TC";
+            }
+            if(flag_F_token){
+              flag_F_token=false;
+            }
       }
     //-4.3 F- Timer 2.
       if(flag_ISR_temporizador_2){
@@ -1046,75 +1053,75 @@ void loop(){
   //-4.2 Secuencia.
     void secuencia(){
       //_____________Modo NODE_______________________________
-      if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
-        b6();
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
-        beforeTime_2 = millis();  // despurar.
-        beforeTime_1 = millis();  // despurar.
-        flag_F_T2_run=true;
-        flag_F_T1_run=true;
-        flag_F_Nodo_Iniciado=true;
-        Nodo_waiting=false;
-      }
+        if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
+          b6();
+          temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
+          beforeTime_2 = millis();  // despurar.
+          beforeTime_1 = millis();  // despurar.
+          flag_F_T2_run=true;
+          flag_F_T1_run=true;
+          flag_F_Nodo_Iniciado=true;
+          Nodo_waiting=false;
+        }
       // Modo MASTER Broadcast.
-      if(incoming_recipient==0              && incoming_sender==master){
-        b6();
-        flag_F_Nodo_Iniciado=true;
-        temporizador_2.once_ms(firstTime, ISR_temporizador_2);
-        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
-        beforeTime_2 = millis();  // despurar.
-        beforeTime_1 = millis();  // despurar.
-        flag_F_T2_run=true;
-        flag_F_T1_run=true;
-      }
+        if(incoming_recipient==0              && incoming_sender==master){
+          b6();
+          flag_F_Nodo_Iniciado=true;
+          temporizador_2.once_ms(firstTime, ISR_temporizador_2);
+          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+          beforeTime_2 = millis();  // despurar.
+          beforeTime_1 = millis();  // despurar.
+          flag_F_T2_run=true;
+          flag_F_T1_run=true;
+        }
       // Modo MASTER >> PARTICULAR si el master quiere saber: a quien puede escuchar.
-      if(incoming_recipient==254            && incoming_sender==master && flag_F_Nodo_Iniciado==false){
-        b6();
-        temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
-        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
-      }
+        if(incoming_recipient==254            && incoming_sender==master && flag_F_Nodo_Iniciado==false){
+          b6();
+          temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
+          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+        }
       // Modo NODO  >> MASTER.
       
       // Modo Particular
-      if(incoming_recipient==localAddress   && incoming_sender==master){
-        b3();
-        temporizador_2.once_ms(fastTime, ISR_temporizador_2);
-        flag_F_T2_run=true;
-      }
-      // Modo NODO  >> PRINCIPAL.
-      if(localAddress==Nodo_actual          && flag_F_nodoRequest){
-        b6();
-        beforeTime_2 = millis();  // despurar.
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        flag_F_T2_run=true;
-      } 
-      // Modo NODOD >> BROADCAST CONTINUO (Prueba).
-      if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
+        if(incoming_recipient==localAddress   && incoming_sender==master){
           b3();
-      }
+          temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+          flag_F_T2_run=true;
+        }
+      // Modo NODO  >> PRINCIPAL.
+        if(localAddress==Nodo_actual          && flag_F_nodoRequest){
+          b6();
+          beforeTime_2 = millis();  // despurar.
+          temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+          flag_F_T2_run=true;
+        } 
+      // Modo NODOD >> BROADCAST CONTINUO (Prueba).
+        if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
+            b3();
+        }
       
       //_____________Modo MASTER__________________________
-      // Modo MASTRER Principal (INICA LA TRANSMISION)
-      if(localAddress==master             && flag_F_masteRequest){
-        b1();   //destination=0
-        // beforeTime_2 = millis();  // despurar.
-        // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
-        temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-        temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
-        flag_F_T2_run=true;
-        flag_F_T1_run=true;
-      }
-      if(localAddress==master             && flag_F_masterNodo){
-        b7();
-        temporizador_2.once_ms(fastTime, ISR_temporizador_2);
-        flag_F_T2_run=true;
-      }
-      if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
-        temporizador_1.attach(waitTime, ISR_temporizador_1);
-        flag_F_T1_run=true;
-        flag_F_Nodo_Iniciado=true;
-      }
+        // Modo MASTRER Principal (INICA LA TRANSMISION)
+        if(localAddress==master             && flag_F_masteRequest){
+          b1();   //destination=0
+          // beforeTime_2 = millis();  // despurar.
+          // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
+          temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+          flag_F_T2_run=true;
+          flag_F_T1_run=true;
+        }
+        if(localAddress==master             && flag_F_masterNodo){
+          b7();
+          temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+          flag_F_T2_run=true;
+        }
+        if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
+          temporizador_1.attach(waitTime, ISR_temporizador_1);
+          flag_F_T1_run=true;
+          flag_F_Nodo_Iniciado=true;
+        }
     }
   //-4.3 Sever Update.  
     void serverUpdate(){
@@ -1127,28 +1134,29 @@ void loop(){
       if(Nodos_LSB_ACK==15){
         if(Zonas_LSB_Estados==0){
           Serial.println("SEC,ALL,0,0");
+          Serial.println("SEC,ALL,0,0");
           return;
         }
       }
       // Nodo 1.
         if(bitRead(Nodos_LSB_ACK, 1)){
-        //-1.1 Zonas NO OK.  
-          if(bitRead(Zonas_LSB_Estados, P1ZA) && !bitRead(ZonasF_LSB_Estados, P1ZA)){
-            Serial.println("SEC,NOK,1,A");
-          }
-          if(bitRead(Zonas_LSB_Estados, P1ZB) && !bitRead(ZonasF_LSB_Estados, P1ZB)){
-            Serial.println("SEC,NOK,1,B");
-          }
+          //-1.1 Zonas NO OK.  
+            if(bitRead(Zonas_LSB_Estados, P1ZA) && !bitRead(ZonasF_LSB_Estados, P1ZA)){
+              Serial.println("SEC,NOK,1,A");
+            }
+            if(bitRead(Zonas_LSB_Estados, P1ZB) && !bitRead(ZonasF_LSB_Estados, P1ZB)){
+              Serial.println("SEC,NOK,1,B");
+            }
 
-        //-1.2 Zonas Falla Constante
-          if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(incoming_zonaFLSB, P1ZA)){
-            Serial.println("SEC,ERR,1,A");
-          }
-          if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(incoming_zonaFMSB, P1ZB)){
-            Serial.println("SEC,ERR,1,B");
-          }
+          //-1.2 Zonas Falla Constante
+            if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(incoming_zonaFLSB, P1ZA)){
+              Serial.println("SEC,ERR,1,A");
+            }
+            if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(incoming_zonaFMSB, P1ZB)){
+              Serial.println("SEC,ERR,1,B");
+            }
 
-        //-1.3 Zonas OK
+          //-1.3 Zonas OK
           if(!bitRead(Zonas_LSB_Estados, P1ZA)){
             Serial.println("SEC,BOK,1,A");
           }
@@ -1156,39 +1164,54 @@ void loop(){
             Serial.println("SEC,BOK,1,B");
           }
         }
-
       // Nodo 2.
         if(bitRead(Nodos_LSB_ACK, 2)){
-          if(bitRead(Zonas_LSB_Estados, P2ZA)){
-            Serial.println("SEC,NOK,2,A");
-          }
-          if(bitRead(Zonas_LSB_Estados, P2ZB)){
-            Serial.println("SEC,NOK,2,B");
-          }
-          if(!bitRead(Zonas_LSB_Estados, P2ZA)){
-            Serial.println("SEC,BOK,2,A");
-          }
-          if(!bitRead(Zonas_LSB_Estados, P2ZB)){
-            Serial.println("SEC,BOK,2,B");
-          }        
+          //-2.1 Zonas No Ok.
+            if(bitRead(Zonas_LSB_Estados, P2ZA) && !bitRead(ZonasF_LSB_Estados, P2ZA)){
+              Serial.println("SEC,NOK,2,A");
+            }
+            if(bitRead(Zonas_LSB_Estados, P2ZB) && !bitRead(ZonasF_LSB_Estados, P2ZB)){
+              Serial.println("SEC,NOK,2,B");
+            }
+          //-2.2 Zonas Fallan Constante.
+            if(bitRead(Zonas_LSB_Estados, P2ZA) && bitRead(ZonasF_LSB_Estados, P2ZA)){
+              Serial.println("SEC,ERR,2,A");
+            }
+            if(bitRead(Zonas_LSB_Estados, P2ZB) && bitRead(ZonasF_LSB_Estados, P2ZB)){
+              Serial.println("SEC,ERR,2,B");
+            }
+          //-2.3 Zonas OK
+            if(!bitRead(Zonas_LSB_Estados, P2ZA)){
+              Serial.println("SEC,BOK,2,A");
+            }
+            if(!bitRead(Zonas_LSB_Estados, P2ZB)){
+              Serial.println("SEC,BOK,2,B");
+            }        
         }
-
       // Nodo 3.
         if(bitRead(Nodos_LSB_ACK, 3)){
-          if(bitRead(Zonas_LSB_Estados, P3ZA)){
-            Serial.println("SEC,NOK,3,A");
-          }
-          if(bitRead(Zonas_LSB_Estados, P3ZB)){
-            Serial.println("SEC,NOK,3,B");
-          }
-          if(!bitRead(Zonas_LSB_Estados, P3ZA)){
-            Serial.println("SEC,BOK,3,A");
-          }
-          if(!bitRead(Zonas_LSB_Estados, P3ZB)){
-            Serial.println("SEC,BOK,3,B");
-          }
+          //-3.1 Zonas No Ok.
+            if(bitRead(Zonas_LSB_Estados, P3ZA) && !bitRead(ZonasF_LSB_Estados, P3ZA)){
+              Serial.println("SEC,NOK,3,A");
+            }
+            if(bitRead(Zonas_LSB_Estados, P3ZB) && !bitRead(ZonasF_LSB_Estados, P3ZB)){
+              Serial.println("SEC,NOK,3,B");
+            }
+          //-3.2 Zonas Fallan Constante.
+            if(bitRead(Zonas_LSB_Estados, P3ZA) && bitRead(ZonasF_LSB_Estados, P3ZA)){
+              Serial.println("SEC,ERR,3,A");
+            }
+            if(bitRead(Zonas_LSB_Estados, P3ZB) && bitRead(ZonasF_LSB_Estados, P3ZB)){
+              Serial.println("SEC,ERR,3,B");
+            }
+          //-3.3 Zonas OK
+            if(!bitRead(Zonas_LSB_Estados, P3ZA)){
+              Serial.println("SEC,BOK,3,A");
+            }
+            if(!bitRead(Zonas_LSB_Estados, P3ZB)){
+              Serial.println("SEC,BOK,3,B");
+            }        
         }
-
       // Nodo 4.
         if(bitRead(Nodos_LSB_ACK, 4)){
           if(bitRead(Zonas_LSB_Estados, P4ZA)){
@@ -1252,9 +1275,8 @@ void loop(){
           }
 
         //-2.4 Nodos Para Mostrar en OLED.
-          Nodos_LSB_str      = 256;
+          Nodos_LSB_str = 256;
           Nodos_LSB_str |=Nodos_LSB_ACK;
-      
         //-2.5 Sumatoria de Nodos Entrantes.
           nodos_LSB_MERGE = Nodos_LSB_ACK;
           nodos_LSB_MERGE |= incoming_nodosLSB;
@@ -1287,6 +1309,7 @@ void loop(){
         zonaFMSB = ZonasF_MSB_Estados;
 
         // depurar en OLED.
+        // Se suma 256 para Mostrar los estados de todas las zonas
         ZonasF_LSB_str = 256;
         ZonasF_LSB_str |= zonaFLSB;
 
@@ -1327,11 +1350,12 @@ void loop(){
 
           Heltec.display->drawString(0, 30, "T1:");
           Heltec.display->drawString(17,30, String(elapseTime_1, DEC)); 
-          Heltec.display->drawString(65,30, "T2:");
-          Heltec.display->drawString(80,30, String(elapseTime_2, DEC));          
+          Heltec.display->drawString(45,30, "T2:");
+          Heltec.display->drawString(62,30, String(elapseTime_2, DEC));          
           
-          // Heltec.display->drawString(70, 30, String(ZonasF_LSB_str, BIN));
-          // Heltec.display->drawString(0, 30, String(Zonas_Fallan, BIN));
+          //MASTER: Tiempo Transcurrido para el Master entre mensajes recibidos.    
+            Heltec.display->drawString(85, 30, "TG:");
+            Heltec.display->drawString(100, 30, String(elapseTime_GAP, DEC));
 
           // NODOS COMPLETOS
           // Heltec.display->drawString(75,30, String("Nds: "));
@@ -1343,6 +1367,9 @@ void loop(){
           // Heltec.display->drawString(45,40, "#");
           
           
+          Heltec.display->drawString(0, 40, String(ZonasF_LSB_Estados, BIN));
+          Heltec.display->drawString(70, 40, String(ZonasF_LSB_str, BIN));
+          Heltec.display->drawString(70, 40, "#");
           
           
           
@@ -1353,7 +1380,6 @@ void loop(){
               Heltec.display->drawString(16,50, Zona_A_str);
               // Error de Zona A.
               if(!zona_1_err){
-
                 Heltec.display->drawString(23,50, String(zona_1, DEC));
               }
               else{
@@ -1377,19 +1403,16 @@ void loop(){
               Heltec.display->drawString(119, 50, Zona_A_PB_str);
             }
             else{
-          // Tiempo Transcurrido para el Master entre mensajes recibidos.    
-            Heltec.display->drawString(0, 50, "TGM:");
-            Heltec.display->drawString(25, 50, String(elapseTime_GAP, DEC));
-          // Nodos reconocidos Propiamente.
-            Heltec.display->drawString(60,50, String(Nodos_LSB_ACK, BIN));
-
+              // Nodos reconocidos Propiamente.
+              Heltec.display->drawString(0,50, String(Nodos_LSB_str, BIN));
+              Heltec.display->drawString(70,50, String(nodos_LSB_MERGE, BIN));
+              Heltec.display->drawString(0, 50, "#");
           }
         // MOSTAR
           Heltec.display->display();
     }
   //-4.5 Analizar.
     void analizar(){
-
       //1 Nodos Leidos
         if(Nodos_LSB_ACK>=Nodos_leidos){
           flag_F_Nodos_Completos=true;
@@ -1402,20 +1425,20 @@ void loop(){
       //3 RESETEO DE NODOS LEIDOS.  
         Nodos_LSB_ACK=0;
       //4 FALLA CONSTANTE.
-        // ZONA_A
+        //-4.1 FALLA ZONA_A
           if(!Zona_A_ST && !zona_1_err)
           {
             ++ zona_1;
-            if(zona_1==15)
+            if(zona_1==5)
             {
               zona_1=0;
               zona_1_err=true;
             }
           }
-        // ZONA_B.
+        //-4.2 FALLA ZONA_B.
           if(!Zona_B_ST && !zona_2_err){
              ++ zona_2;
-             if(zona_2==15){
+             if(zona_2==5){
                zona_2=0;
                zona_2_err=true;
              }
@@ -1428,9 +1451,9 @@ void loop(){
             bitSet(Zonas_Fallan, Zona_B);
             ZonaF_B_str='X';
           }
-        // Reset contador
-        if(Zona_A_ST && zona_1>0) zona_1=0;
-        if(Zona_B_ST && zona_2>0) zona_2=0;
+        //-4.3 Reset contador
+          if(Zona_A_ST && zona_1>0) zona_1=0;
+          if(Zona_B_ST && zona_2>0) zona_2=0;
       //5 Flag clear Timer 1 and 2.
         flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
     }
