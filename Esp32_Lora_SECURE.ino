@@ -139,7 +139,7 @@
       bool        Zonas_Aceptadas;
       String      Zona_A_PB_str;
       String      Zona_B_PB_str;
-
+      byte        Zonas_Falla_Time;
       word        Zonas_Fallan;
       byte        Zonas_Fallan_LSB;
       byte        Zonas_Fallan_MSB;
@@ -225,7 +225,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF; // address of this device           a3
+      byte        localAddress  = 0x03; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -314,6 +314,7 @@ void setup(){
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
     //-2.2 Valores y Espacios de Variables.
+      Zonas_Falla_Time=2;
       Nodo_primero    = 1;
       Nodo_ultimo     = Nodos;
       Nodos_y_Master  = Nodos +1;    // Numero de Nodos + Master.
@@ -333,7 +334,6 @@ void setup(){
         Nodo_Name="NODO:";
       }
     //-2.3 Timer Answer.
-      
       tokenTime       = 1000;
       baseTime        = 1000;
       updateTime      = 1000;
@@ -1429,7 +1429,7 @@ void loop(){
           if(!Zona_A_ST && !zona_1_err)
           {
             ++ zona_1;
-            if(zona_1==5)
+            if(zona_1==Zonas_Falla_Time)
             {
               zona_1=0;
               zona_1_err=true;
@@ -1438,7 +1438,7 @@ void loop(){
         //-4.2 FALLA ZONA_B.
           if(!Zona_B_ST && !zona_2_err){
              ++ zona_2;
-             if(zona_2==5){
+             if(zona_2==Zonas_Falla_Time){
                zona_2=0;
                zona_2_err=true;
              }
