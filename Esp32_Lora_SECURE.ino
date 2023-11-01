@@ -225,7 +225,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x03; // address of this device           a3
+      byte        localAddress  = 0xFF; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -1149,10 +1149,10 @@ void loop(){
             }
 
           //-1.2 Zonas Falla Constante
-            if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(incoming_zonaFLSB, P1ZA)){
+            if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(ZonasF_LSB_Estados, P1ZA)){
               Serial.println("SEC,ERR,1,A");
             }
-            if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(incoming_zonaFMSB, P1ZB)){
+            if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(ZonasF_LSB_Estados, P1ZB)){
               Serial.println("SEC,ERR,1,B");
             }
 
