@@ -12,13 +12,19 @@
   //  NO tomar como referencia las etiquetas D1, D2,D3, ....Dx.
   
   //-2.1 Definicion de etiquetas para las Entradas.
-    #define Zona_A_in     32        // Entrada de Zona 1
-    #define Zona_B_in     33        // Entrada de Zona 2
+    #define Zona_A_in     32        // 32 Entrada de Zona 1
+    #define Zona_B_in     33        // 33 Entrada de Zona 2
     #define Entrada_X1_in 9         // Entrada Digital.
     #define Fuente_in     22
     #define PB_zonas_in   0         // Entrada de Pulsador PB_zonas_in.
     #define PB_ZA_in      38        //
     #define PB_ZB_in      39        //
+
+    #define in_12         12
+    #define in_13         13
+    #define in_36         36
+    #define in_37         37        
+
   //-2.2 Definicion de etiquetas para las Salidas.
     #define LED_azul      2
 
@@ -247,7 +253,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0xFF; // address of this device           a3
+      byte        localAddress  = 0x01; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -342,11 +348,16 @@
 void setup(){
   //1. Configuracion de Puertos.
     //1.1 Configuracion de Salidas:
+      pinMode(in_36, OUTPUT);
+      pinMode(in_37, OUTPUT);
     //1.2 Configuracion de Entradas
-      pinMode(Zona_A_in, INPUT_PULLUP);
-      pinMode(Zona_B_in, INPUT_PULLUP);
+      pinMode(Zona_A_in, INPUT);
+      pinMode(Zona_B_in, INPUT);
       pinMode(PB_ZA_in, INPUT);
       pinMode(Fuente_in, INPUT);
+
+      // pinMode(in_12, INPUT);
+      // pinMode(in_13, INPUT);      
       
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
