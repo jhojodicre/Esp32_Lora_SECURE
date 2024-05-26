@@ -6,27 +6,27 @@
     #include "Node.h"
     // #include "images.h"
     
-//2. Definicion de Pinout.
+//2. PINOUT Definicion de ENTRADAS Y SALIDAS.
   //  Las Etiquetas para los pinout son los que comienzan con GPIO
   //  Es decir, si queremos activar la salida 1, tenemos que buscar la referencia GPIO 1, Pero solomante Escribir 1 sin "GPIO"
   //  NO tomar como referencia las etiquetas D1, D2,D3, ....Dx.
   
-  //-2.1 Definicion de etiquetas para las Entradas.
+  //-2.1 ENTRADAS= Definicion de etiquetas para las Entradas.
     #define Zona_A_in     32        // 32 Entrada de Zona 1
     #define Zona_B_in     33        // 33 Entrada de Zona 2
-    #define Entrada_X1_in 9         // Entrada Digital.
+    #define PB_ZA_in      39        // Pulsador A= Resetea o reconoce "ACK" la Zona A
+    #define PB_ZB_in      38        // Pulsador B= Resetea o reconoce "ACK" la Zona B
+    #define PB_ZC_in      0         // Pulsador C= Resetea o reconoce "ACK" las Zona AB (Entrada de Pulsador por Defecto PB_ZC_in.)
     #define Fuente_in     22
-    #define PB_zonas_in   0         // Entrada de Pulsador PB_zonas_in.
-    #define PB_ZA_in      38        //
-    #define PB_ZB_in      39        //
 
+    #define Entrada_X1_in 9         // Entrada Digital.
     #define in_12         12
     #define in_13         13
     #define in_36         36
     #define in_37         37        
 
-  //-2.2 Definicion de etiquetas para las Salidas.
-    #define LED_azul      2
+  //-2.2 SALIDAS= Definicion de etiquetas para las Salidas.
+    #define LED_azul      21
 
   //-2.3 ZONAS
     #define P1ZA          0
@@ -85,7 +85,7 @@
     bool          flag_F_updateServer=false;
     bool          flag_F_respondido=false;
     bool          flag_F_masteRequest=false;
-    bool          flag_F_masterIniciado=false;
+    bool          flag_F_masterIniciado=false;      // Puede ocurrir durante un Reinicio
     bool          flag_F_nodoRequest=false;
     bool          flag_F_masterNodo=false;          // Habilitada para solicitar informacion a un Nodo Especifico    
     bool          flag_F_PAQUETE=false;
@@ -158,13 +158,13 @@
       int         Zona_B;
       bool        Zona_A_ST;
       bool        Zona_B_ST;
+      bool        Zona_A_ACK;
+      bool        Zona_B_ACK;
+      bool        Zona_AB_ACK;
       String      Zona_A_str;
       String      Zona_B_str;
-      bool        Zona_A_Aceptada;
-      bool        Zona_B_Aceptada;
-      bool        Zonas_Aceptadas;
-      String      Zona_A_PB_str;
-      String      Zona_B_PB_str;
+      String      Zona_A_ACK_str;
+      String      Zona_B_ACK_str;
       byte        Zonas_Falla_Time;
       word        Zonas_Fallan;
       byte        Zonas_Fallan_LSB;
@@ -174,8 +174,8 @@
       byte        ZonasF_MSB_Estados;
 
       int         ZonasF_LSB_str;
-      char        ZonaF_A_str;
-      char        ZonaF_B_str;
+      char        Zona_A_F_str;
+      char        Zona_B_F_str;
       // TIEMPO DE ZONA EN FALLA.
       int        zona_1;
       int        zona_2;
@@ -253,7 +253,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x01; // address of this device           a3
+      byte        localAddress  = 0x02; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -348,12 +348,13 @@
 void setup(){
   //1. Configuracion de Puertos.
     //1.1 Configuracion de Salidas:
-      pinMode(in_36, OUTPUT);
-      pinMode(in_37, OUTPUT);
+      // pinMode(in_36, OUTPUT);
+      // pinMode(in_37, OUTPUT);
     //1.2 Configuracion de Entradas
       pinMode(Zona_A_in, INPUT);
       pinMode(Zona_B_in, INPUT);
       pinMode(PB_ZA_in, INPUT);
+      pinMode(PB_ZB_in, INPUT);
       pinMode(Fuente_in, INPUT);
 
       // pinMode(in_12, INPUT);
@@ -370,7 +371,7 @@ void setup(){
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
-      Zona_B          = localAddress + (localAddress - 1);
+      Zona_B          = localAddress + (localAddress - 1); // cada zona tomara su numero depende de la direccion local que tome el nodo.
       Zona_A          = Zona_B - 1;
       incoming_zonesLSB  = 0x00;
       incoming_zonesMSB  = 0x00;
@@ -421,7 +422,7 @@ void setup(){
     
     //-3.2 Interrupciones Habilitadas.
       //****************************
-      // attachInterrupt (digitalPinToInterrupt (PB_zonas_in), ISR_0, FALLING);  // attach interrupt handler for D2
+      // attachInterrupt (digitalPinToInterrupt (PB_ZC_in), ISR_0, FALLING);  // attach interrupt handler for D2
       // attachInterrupt (digitalPinToInterrupt (Zona_A_in), ISR_1, FALLING);      // attach interrupt handler for D2
       // attachInterrupt (digitalPinToInterrupt (Zona_B_in), ISR_2, FALLING);      // attach interrupt handler for D2
       // attachInterrupt (digitalPinToInterrupt (PB_ZA_in), ISR_3, FALLING);      // attach interrupt handler for D2
@@ -492,18 +493,19 @@ void loop(){
     //-4.2 F- Timer 1.
       if(flag_ISR_temporizador_1){
         analizar();
-        //MASTER
-        if(localAddress==255 && !flag_F_masterIniciado){
-          b1();
-          flag_F_responder=true;
-        }
-        //NODOS.
-          // Responder si No ha recibido el nodo Anterior.
+        //MASTER MODE.
+          // RESPONDER si el MAESTRO NO esta iniciado.
+          if(localAddress==255 && !flag_F_masterIniciado){
+            b1();
+            flag_F_responder=true;
+          }
+        //NODE MODE.
+          // RESPONDER si NO hay TOKEN.
             if (localAddress<255 && !flag_F_token){
               b6();
-              flag_F_responder=true;
-              flag_F_PAQUETE=false;
               codigo="C"+Fuente_in_str;
+              flag_F_PAQUETE=false;
+              flag_F_responder=true;
             }
             if (flag_F_token){
               flag_F_token=false;
@@ -512,12 +514,12 @@ void loop(){
     //-4.3 F- Timer 2.
       if(flag_ISR_temporizador_2){
         beforeTime_2=0;   
-        flag_F_tokenTime=true;
-        flag_F_responder=true;
-        codigo="TK";
         if(flag_F_masterNodo){
           codigo=function_Remote;
         }
+        codigo="TK";
+        flag_F_tokenTime=true;
+        flag_F_responder=true;
       }
     //-4.4 F- Timer 0.
       if(flag_ISR_temporizador_0){
@@ -539,7 +541,6 @@ void loop(){
         flag_F_PAQUETE=false;
         secuencia();
       }
-
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
       if(flag_F_responder){
@@ -570,9 +571,9 @@ void loop(){
     // Deshabilitamos Banderas
     int repetir=repeticiones;
     for (int encender=0; encender<repetir; ++encender){
-      digitalWrite(LED_azul, LOW);   // Led ON.
+      digitalWrite(LED_azul, HIGH);  // Led ON.
       delay(500);                    // pausa 1 seg.
-      digitalWrite(LED_azul, HIGH);    // Led OFF.
+      digitalWrite(LED_azul, LOW);   // Led OFF.
       delay(500);                    // pausa 1 seg.
     }
   }
@@ -681,8 +682,8 @@ void loop(){
         Serial.println(Zona_B_ST);
         //6.
         Serial.print("Pulsadores: ");
-        Serial.print(Zona_B_Aceptada);
-        Serial.println(Zona_A_Aceptada);
+        Serial.print(Zona_B_ACK);
+        Serial.println(Zona_A_ACK);
         //7.
         Serial.print("Codigo: ");
         Serial.println(codigo);
@@ -744,7 +745,8 @@ void loop(){
           Serial.println("funion B N?�6");
         }
         b6();
-      }        
+      }
+      // MAESTRO resetea al Nodo.
       if (funtion_Mode=="B" && funtion_Number=="7"){
         if(flag_F_depurar){
           Serial.println("funion B N?�7");
@@ -1057,56 +1059,60 @@ void loop(){
   //-4.1 Estados de Zonas.
     void reviso(){
       if(localAddress==255) return;
-      Zona_A_Aceptada=digitalRead(PB_ZA_in);
-      Zona_B_Aceptada=digitalRead(PB_ZB_in);
+      // 1. Pulsadores A y B Lectura.
+        Zona_A_ACK=digitalRead(PB_ZA_in);        // pulsador A.
+        Zona_B_ACK=digitalRead(PB_ZB_in);        // pulsador B.
+        Zona_AB_ACK=digitalRead(PB_ZC_in);    // pulsador C, Pulsador por defecto PRG.
+      // 2. Zona A y Zona B Lectura.
+        Zona_A_ST=digitalRead(Zona_A_in);
+        Zona_B_ST=digitalRead(Zona_B_in);
+      // 3. Bateria o Fuente Lectura.
+        Fuente_in_ST=digitalRead(Fuente_in);
 
-      Zona_A_ST=digitalRead(Zona_A_in);
-      Zona_B_ST=digitalRead(Zona_B_in);
+      // 4. ZONAS A y B RESET.
+        // Pulsador C = reconocimiento de Ambas Zonas A y B. Reset de Ambas Zonas y Fallas.
+        if(!Zona_AB_ACK){
+          bitClear(Zonas, Zona_A);      // ZONA A Reset.
+          bitClear(Zonas, Zona_B);      // ZONA B Reset.
 
-      Zonas_Aceptadas=digitalRead(PB_zonas_in);
+          bitClear(Zonas_Fallan, Zona_A);     // ZONA A FALLA Reset.
+          bitClear(Zonas_Fallan, Zona_B);     // ZONA B FALLA Reset.
 
-      Fuente_in_ST=digitalRead(Fuente_in);
+          Zona_A_F_str='.';
+          Zona_B_F_str='.';
 
-      // Pulsadores
-      if(!Zonas_Aceptadas){
-        bitClear(Zonas, Zona_A);
-        bitClear(Zonas, Zona_B);
+          zona_1_err=false;
+          zona_2_err=false;
+        }
+      // 5. ZONA A RESET= Zona A aceptada desde el pulsador activo en bajo "0"
+        if(!Zona_A_ACK){
+          bitClear(Zonas, Zona_A);
+          bitClear(Zonas_Fallan, Zona_A);
+          zona_1_err=false;
+          Zona_A_F_str='.';
+        }
+      // 6. ZONA B RESET= Zona B aceptada desde el pulsador activo en bajo "0"
+        if(!Zona_B_ACK){
+          bitClear(Zonas, Zona_B);
+          bitClear(Zonas_Fallan, Zona_B);
+          zona_2_err=false;
+          Zona_B_F_str='.';        
+        }
 
-        bitClear(Zonas_Fallan, Zona_A);
-        bitClear(Zonas_Fallan, Zona_B);
-
-        ZonaF_A_str='.';
-        ZonaF_B_str='.';
-
-        zona_1_err=false;
-        zona_2_err=false;
-      }
-      if(!Zona_A_Aceptada){
-        bitClear(Zonas, Zona_A);
-        bitClear(Zonas_Fallan, Zona_A);
-        zona_1_err=false;
-        ZonaF_A_str='.';
-      }
-      if(!Zona_B_Aceptada){
-        bitClear(Zonas, Zona_B);
-        bitClear(Zonas_Fallan, Zona_B);
-        zona_2_err=false;
-        ZonaF_B_str='.';        
-      }
-
-      // Zonas.
-      if(!Zona_A_ST){
-        bitSet(Zonas, Zona_A);
-      }
-      if(!Zona_B_ST){
-        bitSet(Zonas, Zona_B);
-      }
-      // Variables para Mostrar en OLED
+      // 7. ZONA A ACTIVA.
+        if(!Zona_A_ST){
+          bitSet(Zonas, Zona_A);
+        }
+      // 8. ZONA B ACTIVA.
+          if(!Zona_B_ST){
+            bitSet(Zonas, Zona_B);
+          }
+      // 10.ZONAS para mostrar en Pantalla  OLED
         Zona_A_str=String(!Zona_A_ST, BIN);
         Zona_B_str=String(!Zona_B_ST, BIN);
 
-        Zona_A_PB_str=String(!Zona_A_Aceptada, BIN);
-        Zona_B_PB_str=String(!Zona_B_Aceptada, BIN);
+        Zona_A_ACK_str=String(!Zona_A_ACK, BIN);
+        Zona_B_ACK_str=String(!Zona_B_ACK, BIN);
 
         Fuente_in_str=String(Fuente_in_ST, BIN);
     }
@@ -1511,7 +1517,7 @@ void loop(){
                 Heltec.display->drawString(23,50, String(zona_1, DEC));
               }
               else{
-                Heltec.display->drawString(23, 50, String(ZonaF_A_str));
+                Heltec.display->drawString(23, 50, String(Zona_A_F_str));
               }
           // ZONA B
               Heltec.display->drawString(35, 50, "ZB:");
@@ -1521,14 +1527,14 @@ void loop(){
                 Heltec.display->drawString(61,50, String(zona_2, DEC));
               }
               else{
-                Heltec.display->drawString(61,50, String(ZonaF_B_str));
+                Heltec.display->drawString(61,50, String(Zona_B_F_str));
               }
           // PULSADOR A
               Heltec.display->drawString(75, 50, "PA:");
-              Heltec.display->drawString(93, 50, Zona_B_PB_str);
+              Heltec.display->drawString(93, 50, Zona_B_ACK_str);
           // PULSADOR B
               Heltec.display->drawString(102, 50, "PB:");
-              Heltec.display->drawString(119, 50, Zona_A_PB_str);
+              Heltec.display->drawString(119, 50, Zona_A_ACK_str);
             }
             else{
               // Nodos reconocidos Propiamente.
@@ -1546,7 +1552,7 @@ void loop(){
           flag_F_Nodos_Completos=true;
         }
 
-      //2 Nodo Ultimo.
+      //2 Nodo Ultimo..
         if(incoming_sender==Nodos){
           flag_F_Nodo_Ultimo=true;
 
@@ -1574,11 +1580,11 @@ void loop(){
           }
           if(zona_1_err){
             bitSet(Zonas_Fallan, Zona_A);
-            ZonaF_A_str='X';
+            Zona_A_F_str='X';
           }
           if(zona_2_err){
             bitSet(Zonas_Fallan, Zona_B);
-            ZonaF_B_str='X';
+            Zona_B_F_str='X';
           }
         //-4.3 Reset contador
           if(Zona_A_ST && zona_1>0) zona_1=0;
@@ -1696,3 +1702,6 @@ void loop(){
         Serial.println(".");
       }
     }
+
+
+//https://resource.heltec.cn/download/package_heltec_esp32_index.json
