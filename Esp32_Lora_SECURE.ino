@@ -21,12 +21,12 @@
 
     #define Entrada_X1_in 9         // Entrada Digital.
     #define in_12         12
-    #define in_13         13
-    #define in_36         36
-    #define in_37         37        
+    #define in_13         13       
 
   //-2.2 SALIDAS= Definicion de etiquetas para las Salidas.
     #define LED_azul      21
+    #define out_rele_1    12
+    #define out_rele_2    13
 
   //-2.3 ZONAS
     #define P1ZA          0
@@ -165,7 +165,7 @@
       String      Zona_B_str;
       String      Zona_A_ACK_str;
       String      Zona_B_ACK_str;
-      byte        Zonas_Falla_Time;
+      byte        Zonas_Falla_Time;        // Tiempo para determinar cuando una zona esta en Falla. Numero de veces que Timer se ejecute
       word        Zonas_Fallan;
       byte        Zonas_Fallan_LSB;
       byte        Zonas_Fallan_MSB;
@@ -349,7 +349,9 @@ void setup(){
   //1. Configuracion de Puertos.
     //1.1 Configuracion de Salidas:
       // pinMode(in_36, OUTPUT);
-      // pinMode(in_37, OUTPUT);
+      pinMode(out_rele_1, OUTPUT);
+      pinMode(out_rele_2, OUTPUT);
+      pinMode(LED_azul, OUTPUT);
     //1.2 Configuracion de Entradas
       pinMode(Zona_A_in, INPUT);
       pinMode(Zona_B_in, INPUT);
@@ -363,7 +365,7 @@ void setup(){
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
     //-2.2 Valores y Espacios de Variables.
-      Zonas_Falla_Time=2;
+      Zonas_Falla_Time=2;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
       Nodo_primero    = 1;
       Nodo_ultimo     = Nodos;
       Nodos_y_Master  = Nodos +1;    // Numero de Nodos + Master.
@@ -539,7 +541,7 @@ void loop(){
     //-4.7 F- Recepcion de Paquete.
       if(flag_F_PAQUETE){
         flag_F_PAQUETE=false;
-        secuencia();
+        secuencia();              // Si recibo un paquete, voy a secuencia para preparar el mensaje que respondere dependiendo de lo que haya recibido
       }
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
@@ -640,8 +642,8 @@ void loop(){
       if (funtion_Mode=="A" && funtion_Number=="5"){
         if(flag_F_depurar){
           Serial.println("funion A N?�5: Modo Continuo");
-          a5_Nodo_Modo_Continuo(x1);
         }
+        a5_Nodo_Modo_Continuo(x1);
       }
       if (funtion_Mode=="A" && funtion_Number=="6"){
         if(flag_F_depurar){
@@ -746,17 +748,10 @@ void loop(){
         }
         b6();
       }
-      // MAESTRO resetea al Nodo.
       if (funtion_Mode=="B" && funtion_Number=="7"){
         if(flag_F_depurar){
           Serial.println("funion B N?�7");
         }
-        flag_F_masterNodo=true;
-        flag_F_PAQUETE=true;
-        function_Remote=inputString.substring(3);   // Extraemos la Funcion a Enviar de la Cadena.
-        Serial.print("Function Code: ");
-        Serial.println(function_Remote);
-        Nodo_destino=x1;
       }
       if (funtion_Mode=="B" && funtion_Number=="8"){
         if(flag_F_depurar){
@@ -769,9 +764,6 @@ void loop(){
         if(flag_F_depurar){
           Serial.println("funion B N?�9");
         }
-        flag_F_masteRequest=true;
-        codigo=inputString.substring(2);
-        flag_F_PAQUETE=true;
       }     
       if (funtion_Mode=="B" && funtion_Number=="0"){
         if(flag_F_depurar){
@@ -783,17 +775,48 @@ void loop(){
       if (funtion_Mode=="C" && funtion_Number=="0"){
         incomingFuntion='0';
       }
-      if (funtion_Mode=="C" && funtion_Number=="1"){
-        // Serial.println("funion C N?�1: updateServer");
-        // c1(x2);
-        incomingFuntion='1';
+      if(funtion_Mode=="C" && funtion_Number=="1"){
+        Serial.println("Funcion C1");
+        if(flag_F_depurar){
+          Serial.println("Funcion C1 EJECUTANDOSE");
+        }
+        c1(x1);
       }
       if(funtion_Mode=="C" && funtion_Number=="2"){
+        Serial.println("Funcion C2");
         if(flag_F_depurar){
-        Serial.println("Ninguna Funcion");
-        
+          Serial.println("Funcion C2 EJECUTANDOSE");
         }
+        c2(x1);
       }
+      if (funtion_Mode=="C" && funtion_Number=="3"){
+        // Serial.println("funion C N?�1: updateServer");
+        // c1(x2);
+        incomingFuntion='3';  // anterior,ente tenia '1' no se porque
+      }
+    // Function tipo M.
+      // MAESTRO Envia a Un Nodo Para Ejecutar Una Funcion.
+        if (funtion_Mode=="M" && funtion_Number=="1"){
+          if(flag_F_depurar){
+            Serial.println("funion M1");
+          }
+          function_Remote=inputString.substring(3);   // Extraemos la Funcion a Enviar de la Cadena.
+          Serial.print("Function Code: ");
+          Serial.println(function_Remote);
+          Nodo_destino=x1;
+          flag_F_masterNodo=true;
+          flag_F_PAQUETE=true;
+        }
+      // MAESTRO Inicia La Comunicacion.
+        if (funtion_Mode=="M" && funtion_Number=="2"){
+          if(flag_F_depurar){
+          }
+          codigo=inputString.substring(2);
+          Serial.print("Function Code: ");
+          Serial.println(codigo);
+          flag_F_PAQUETE=true;
+          flag_F_masteRequest=true;
+        }
   }
 
 //3. Funciones Seleccionadas para Ejecutar.
@@ -807,9 +830,9 @@ void loop(){
       }
       for(int repetir=0; repetir<veces; ++repetir){
         delay(retardo);                  // pausa 1 seg.
-        digitalWrite(LED_azul, LOW);     // Led ON.
+        digitalWrite(LED_azul, HIGH);     // Led ON.
         delay(retardo);                  // pausa 1 seg.
-        digitalWrite(LED_azul, HIGH);    // Led OFF.
+        digitalWrite(LED_azul, LOW);    // Led OFF.
       }
     }
     void a2(){
@@ -1043,7 +1066,33 @@ void loop(){
         int aa2=a2;
       }
   //-3.3 Funciones tipo C.
-    void c1(int modo_updateServer){
+    void c1(int salida_RELE){
+      int a = salida_RELE;
+      if(a==1){
+        digitalWrite(out_rele_1, HIGH);
+        Serial.println(a);
+      }
+      if(a==0){
+        digitalWrite(out_rele_1, LOW);
+        Serial.println(a);
+      }
+      Serial.println("ejecutada");
+
+    }
+    void c2(int salida_RELE){
+      int a = salida_RELE;
+      if(a==1){
+        digitalWrite(out_rele_2, HIGH);
+        Serial.println(a);
+      }
+      if(a==0){
+        digitalWrite(out_rele_2, LOW);
+        Serial.println(a);
+      }
+      Serial.println("ejecutada");
+
+    }
+    void c3(int modo_updateServer){
       int a=modo_updateServer;
       if(a==1){
         flag_F_updateServer=true;
@@ -1060,7 +1109,7 @@ void loop(){
     void reviso(){
       if(localAddress==255) return;
       // 1. Pulsadores A y B Lectura.
-        Zona_A_ACK=digitalRead(PB_ZA_in);        // pulsador A.
+        Zona_A_ACK=digitalRead(PB_ZA_in);        // pulsador A. PB_ZA_in
         Zona_B_ACK=digitalRead(PB_ZB_in);        // pulsador B.
         Zona_AB_ACK=digitalRead(PB_ZC_in);    // pulsador C, Pulsador por defecto PRG.
       // 2. Zona A y Zona B Lectura.
@@ -1118,76 +1167,79 @@ void loop(){
     }
   //-4.2 Secuencia.
     void secuencia(){
-      //_____________Modo NODE_______________________________
-        if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
-          b6();
-          temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
-          beforeTime_2 = millis();  // despurar.
-          beforeTime_1 = millis();  // despurar.
-          flag_F_T2_run=true;
-          flag_F_T1_run=true;
-          flag_F_Nodo_Iniciado=true;
-          Nodo_waiting=false;
-        }
-      // Modo MASTER Broadcast.
-        if(incoming_recipient==0              && incoming_sender==master){
-          b6();
-          flag_F_Nodo_Iniciado=true;
-          temporizador_2.once_ms(firstTime, ISR_temporizador_2);
-          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
-          beforeTime_2 = millis();  // despurar.
-          beforeTime_1 = millis();  // despurar.
-          flag_F_T2_run=true;
-          flag_F_T1_run=true;
-        }
-      // Modo MASTER >> PARTICULAR si el master quiere saber: a quien puede escuchar.
-        if(incoming_recipient==254            && incoming_sender==master && flag_F_Nodo_Iniciado==false){
-          b6();
-          temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
-          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
-        }
-      // Modo NODO  >> MASTER.
+      //1. _____________Modo NODE_______________________________
+        //1.1 Modo Node Responde
+          if(incoming_recipient==localAddress   && incoming_sender==Nodo_anterior){
+            b6();
+            temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+            temporizador_1.attach_ms(cycleTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
+            beforeTime_2 = millis();  // despurar.
+            beforeTime_1 = millis();  // despurar.
+            flag_F_T2_run=true;
+            flag_F_T1_run=true;
+            flag_F_Nodo_Iniciado=true;
+            Nodo_waiting=false;
+          }
+        //1.2 Modo MASTER Broadcast.
+          if(incoming_recipient==0              && incoming_sender==master){
+            b6();
+            flag_F_Nodo_Iniciado=true;
+            temporizador_2.once_ms(firstTime, ISR_temporizador_2);
+            temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+            beforeTime_2 = millis();  // despurar.
+            beforeTime_1 = millis();  // despurar.
+            flag_F_T2_run=true;
+            flag_F_T1_run=true;
+          }
+        //1.3 Modo MASTER >> PARTICULAR si el master quiere saber: a quien puede escuchar.
+          if(incoming_recipient==254            && incoming_sender==master && flag_F_Nodo_Iniciado==false){
+            b6();
+            temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
+            temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+          }
+        //1.4 Modo NODO  >> MASTER.
       
-      // Modo Particular
-        if(incoming_recipient==localAddress   && incoming_sender==master){
-          b3();
-          temporizador_2.once_ms(fastTime, ISR_temporizador_2);
-          flag_F_T2_run=true;
-        }
-      // Modo NODO  >> PRINCIPAL.
-        if(localAddress==Nodo_actual          && flag_F_nodoRequest){
-          b6();
-          beforeTime_2 = millis();  // despurar.
-          temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-          flag_F_T2_run=true;
-        } 
-      // Modo NODOD >> BROADCAST CONTINUO (Prueba).
+        //1.5 Modo Particular
+          if(incoming_recipient==localAddress   && incoming_sender==master){
+            b3();
+            temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+            flag_F_T2_run=true;
+          }
+        //1.6 Modo NODO  >> PRINCIPAL.
+          if(localAddress==Nodo_actual          && flag_F_nodoRequest){
+            b6();
+            beforeTime_2 = millis();  // despurar.
+            temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+            flag_F_T2_run=true;
+          } 
+        //1.7 Modo NODO >> BROADCAST CONTINUO (Prueba).
         if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
             b3();
         }
       
-      //_____________Modo MASTER__________________________
-        // Modo MASTRER Principal (INICA LA TRANSMISION)
-        if(localAddress==master             && flag_F_masteRequest){
-          b1();   //destination=0
-          // beforeTime_2 = millis();  // despurar.
-          // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
-          temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-          temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
-          flag_F_T2_run=true;
-          flag_F_T1_run=true;
-        }
-        if(localAddress==master             && flag_F_masterNodo){
-          b7();
-          temporizador_2.once_ms(fastTime, ISR_temporizador_2);
-          flag_F_T2_run=true;
-        }
-        if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
-          temporizador_1.attach(waitTime, ISR_temporizador_1);
-          flag_F_T1_run=true;
-          flag_F_Nodo_Iniciado=true;
-        }
+        //1.8 Modo NODO Inicio Automatico
+          if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
+            temporizador_1.attach(waitTime, ISR_temporizador_1);
+            flag_F_T1_run=true;
+            flag_F_Nodo_Iniciado=true;
+          }
+      //2. _____________Modo MASTER__________________________
+        //2.1 Modo MASTRER Principal (INICA LA TRANSMISION) Ejecutado desde M2.
+          if(localAddress==master             && flag_F_masteRequest){
+            b1();   //destination=0
+            // beforeTime_2 = millis();  // despurar.
+            // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
+            temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
+            temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+            flag_F_T2_run=true;
+            flag_F_T1_run=true;
+          }
+        //2.2 Modo MASTER Nodo (Solicitud de Funcion) Ejecutado desde M1.
+          if(localAddress==master             && flag_F_masterNodo){
+            b7();
+            temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+            flag_F_T2_run=true;
+          }
     }
   //-4.3 Sever Update.  
     void serverUpdate(){
@@ -1551,11 +1603,9 @@ void loop(){
         if(Nodos_LSB_ACK>=Nodos_leidos){
           flag_F_Nodos_Completos=true;
         }
-
       //2 Nodo Ultimo..
         if(incoming_sender==Nodos){
           flag_F_Nodo_Ultimo=true;
-
         }
       //3 RESETEO DE NODOS LEIDOS.  
         Nodos_LSB_ACK=0;
@@ -1587,6 +1637,7 @@ void loop(){
             Zona_B_F_str='X';
           }
         //-4.3 Reset contador
+          // si el contador no llega al set point y se reestableció la zona
           if(Zona_A_ST && zona_1>0) zona_1=0;
           if(Zona_B_ST && zona_2>0) zona_2=0;
       //5 Flag clear Timer 1 and 2.

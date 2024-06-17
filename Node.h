@@ -1,5 +1,5 @@
-#ifndef NODE_H
-#define NODE_H
+#ifndef NODE_H  // si no esta definida la libreria la defino
+#define NODE_H  // la defino
 #include <Arduino.h>
 
 class Node{
@@ -36,4 +36,4 @@ class Node{
         bool Zone_A_OK;
         bool Zone_B_OK;
 };
-#endif
+#endif   // fin de la definicion.
