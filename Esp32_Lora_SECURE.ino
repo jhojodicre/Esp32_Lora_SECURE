@@ -70,7 +70,7 @@
     String        funtion_Parmeter4;      // Parametro para las Funciones remotas.
     String        function_Remote;
     String        function_Enable;
-    volatile int  x1=0;
+    int  x1=0;
     volatile int  x2=0;
     volatile int  x3=0;
     volatile int  x4=0;
@@ -106,16 +106,16 @@
 
   
   //-3.3 Variables NODOS y ZONAS.
-      int         Nodos = 3;           // Establece Cuantos Nodos Confirman La Red a6.
       byte        master=0xFF;
+      int         Nodos;//*****************// Establece Cuantos Nodos Confirman La Red a6.
+      byte        Nodo_primero;
+      int         Nodo_ultimo;
+      byte        Nodo_anterior;
+      byte        Nodo_siguiente;    // Direccion del Nodo que sigue para enviar mensaje
+      byte        Nodo_destino;
+      byte        Nodo_actual=0;
       int         Nodos_leidos;         // NODS Y MASTER -1
       float       Nodos_leidos_aux;
-      byte        Nodo_siguiente=0;    // Direccion del Nodo que sigue para enviar mensaje
-      byte        Nodo_anterior;
-      byte        Nodo_actual=0;
-      int         Nodo_ultimo;
-      byte        Nodo_primero=1;
-      byte        Nodo_destino;
       word        Nodos_LSB_ACK;
       int         Nodos_LSB_str;
       int         Nodos_y_Master;
@@ -141,6 +141,7 @@
       byte        nodo14=0;
       byte        nodo15=0;
       byte        nodo16=0;
+      byte        nodo_local=0;   // Info del nodo al final del mensaje.
       
       byte        Zonas_MSB=0;
       byte        Zonas_LSB=0;
@@ -156,11 +157,13 @@
 
       int         Zona_A;
       int         Zona_B;
-      bool        Zona_A_ST;
-      bool        Zona_B_ST;
+      bool        Zona_A_ax;
+      bool        Zona_B_ax;
       bool        Zona_A_ACK;
       bool        Zona_B_ACK;
       bool        Zona_AB_ACK;
+      bool        Zona_A_ST;
+      bool        Zona_B_ST;
       String      Zona_A_str;
       String      Zona_B_str;
       String      Zona_A_ACK_str;
@@ -197,6 +200,8 @@
 
       bool        Fuente_in_ST=false;
       String      Fuente_in_str;
+      bool        bat=false;
+      bool        timer_nodo_ST;
 
 
 
@@ -231,6 +236,9 @@
       uint32_t    remainT1;
       uint32_t    remainT2;
       int         fastTime    =   1;
+      String      temporizador_1_str;
+      String      temporizador_2_str;
+
     // Alarmas
       int         Alarma_Zona_A_in=0;
       int         Alarma_Zona_B_in=0;
@@ -253,7 +261,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x02; // address of this device           a3
+      byte        localAddress  = 0xFF; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -277,18 +285,19 @@
     Ticker temporizador_0;                // Tiempo de Evento.
     // Ticker temporizador_4;             // Tiempo de respuesta de todas las placas.
   //-4.1 Node
-    Node Node1;
-    Node Node2;
-    Node Node3;
-    Node Node4;
-    // Node Node5;
-    // Node Node6;
-    // Node Node7;
-    // Node Node8;
-    // Node Node9;
-    // Node Node10;
-    // Node Node11;
-    // Node Node12;
+    Node Node0(0);    // Nodo Local
+    Node Node1(1);
+    Node Node2(2);
+    Node Node3(3);
+    Node Node4(4);
+    Node Node5(5);
+    Node Node6(6);
+    Node Node7(7);
+    Node Node8(8);
+    Node Node9(9);
+    Node Node10(10);
+    Node Node11(11);
+    Node Node12(12);
 
 //5. Funciones ISR.
   //-5.1 Serial Function.
@@ -332,12 +341,14 @@
     void ISR_temporizador_1(){
         beforeTime_1 = millis();
         flag_ISR_temporizador_1=true;
+        temporizador_1_str=String(flag_ISR_temporizador_1,BIN);
     }
     void ISR_temporizador_2(){
       currentTime_2 = millis();
-      flag_ISR_temporizador_2=true;
       flag_F_token=true;
       elapseTime_2=0;
+      flag_ISR_temporizador_2=true;
+      temporizador_2_str=String(flag_ISR_temporizador_2,BIN);
       flag_F_T2_run=false;
     }
     void ISR_temporizador_3(){
@@ -364,16 +375,21 @@ void setup(){
       
   //2. Condiciones Iniciales.
     //-2.1 Estado de Salidas.
+      digitalWrite(out_rele_1, LOW);
+      digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      Zonas_Falla_Time=2;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
-      Nodo_primero    = 1;
-      Nodo_ultimo     = Nodos;
+      localAddress    = 0xFF;
+      Nodos           = 3;
+      Zonas_Falla_Time= 5;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
+      Nodo_primero    = 6;
+      Nodo_ultimo     = 8;
       Nodos_y_Master  = Nodos +1;    // Numero de Nodos + Master.
       Nodos_leidos    = Nodos_y_Master -1;
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
-      Zona_B          = localAddress + (localAddress - 1); // cada zona tomara su numero depende de la direccion local que tome el nodo.
+      Zona_B          = localAddress + (localAddress - 1); // cada zona tomara su numero depende de la direccion local que tome el nodo. ORIGIBALMENTE= localAddress + (localAddress - 1)
+      // Zona_B          = localAddress + (localAddress - 2); Esta linea puede ser activada cuando el numero de zonas son diferentes a la secuencia normal, ya que la placa 1 tiene las zonas 1 y 2, y asi sucesivamente.
       Zona_A          = Zona_B - 1;
       incoming_zonesLSB  = 0x00;
       incoming_zonesMSB  = 0x00;
@@ -385,21 +401,21 @@ void setup(){
         Nodo_Name="NODO:";
       }
     //-2.3 Timer Answer.
-      tokenTime       = 1000;
-      baseTime        = 1000;
-      updateTime      = 1000;
+      tokenTime       = 400;
+      baseTime        = 400;
+      updateTime      = 400;
       wakeUpTime      = tokenTime*localAddress;
       cycleTime       = tokenTime*(Nodos+1);
       masterTime      = cycleTime*2;
       firstTime       = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
-      wakeUpTime      = 30.0;
+      wakeUpTime      = 30.0;         // Este temporizador es para rresponder despues que el nodo despierta despues de mucho tiempo sin encender y es el unico que esta activo.
       chismeTime      = (10*Nodo_actual)+100;
       if(localAddress==Nodo_primero){
-        tokenTime =1000;
+        // tokenTime =1000;
         Nodo_anterior=Nodo_ultimo;
       }
       if(localAddress==Nodo_ultimo){
-        tokenTime =1000;
+        // tokenTime =1000;
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
@@ -505,9 +521,11 @@ void loop(){
           // RESPONDER si NO hay TOKEN.
             if (localAddress<255 && !flag_F_token){
               b6();
-              codigo="C"+Fuente_in_str;
+              // codigo="S1" + Fuente_in_str + temporizador_1_str;
+            
               flag_F_PAQUETE=false;
               flag_F_responder=true;
+              timer_nodo_ST=true;
             }
             if (flag_F_token){
               flag_F_token=false;
@@ -519,9 +537,10 @@ void loop(){
         if(flag_F_masterNodo){
           codigo=function_Remote;
         }
-        codigo="TK";
+        // codigo="S2" + Fuente_in_str + temporizador_2_str;//"TK";
         flag_F_tokenTime=true;
         flag_F_responder=true;
+        timer_nodo_ST=false;
       }
     //-4.4 F- Timer 0.
       if(flag_ISR_temporizador_0){
@@ -546,6 +565,7 @@ void loop(){
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
       if(flag_F_responder){
+        actualizar();
         RFM95_enviar(codigo);
       }
     //-5.2 RFM95 RECIBIR.
@@ -567,7 +587,7 @@ void loop(){
     Heltec.display->drawString(0, 40, "SECURE");
     Heltec.display->drawString(0, 50, "ALL");
     Heltec.display->display();
-    delay(500);
+    delay(300);
   }
   void led_Monitor(int repeticiones){
     // Deshabilitamos Banderas
@@ -601,10 +621,10 @@ void loop(){
     }
   }  
   void ejecutar_solicitud(){
-      x1=funtion_Parmeter1.toInt();
-      x2=funtion_Parmeter2.toInt();
-      x3=funtion_Parmeter3.toInt();
-      x4=funtion_Parmeter4.toInt();
+    x1=funtion_Parmeter1.toInt();
+    x2=funtion_Parmeter2.toInt();
+    x3=funtion_Parmeter3.toInt();
+    x4=funtion_Parmeter4.toInt();
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
         if(flag_F_depurar){
@@ -679,9 +699,9 @@ void loop(){
         Serial.print("Zona B= bit: ");
         Serial.println(Zona_B);
         Serial.print("Zona A Estado: ");
-        Serial.println(Zona_A_ST);
+        Serial.println(Zona_A_ax);
         Serial.print("Zona B Estado: ");
-        Serial.println(Zona_B_ST);
+        Serial.println(Zona_B_ax);
         //6.
         Serial.print("Pulsadores: ");
         Serial.print(Zona_B_ACK);
@@ -817,6 +837,25 @@ void loop(){
           flag_F_PAQUETE=true;
           flag_F_masteRequest=true;
         }
+    // Function Tipo S: Funcion de Estado de Los Nodos.
+        if (funtion_Mode=="S" && funtion_Number=="0"){
+          if(flag_F_depurar){
+            Serial.println("funion S N0");
+          }
+          // s1(x1);
+        }
+        if (funtion_Mode=="S" && funtion_Number=="1"){
+          if(flag_F_depurar){
+            Serial.println("funion S N1");
+          }
+          s1(x1,x2);
+        }
+        // if (funtion_Mode=="S" && funtion_Number=="2"){
+        //   if(flag_F_depurar){
+        //     Serial.println("funion S N2");
+        //   }
+        //   s2(x1);
+        // }
   }
 
 //3. Funciones Seleccionadas para Ejecutar.
@@ -1035,7 +1074,7 @@ void loop(){
         nodosLSB=nodos_LSB_MERGE;
         //-7. Nodo_Info.
         nodoInfo = Zonas_Fallan;
-        codigo="C" + Fuente_in_str;
+        codigo="S1" + Fuente_in_str;
       }
     // b7- Respuesta a Comandos del Maestro.  
       void b7 (){
@@ -1103,9 +1142,45 @@ void loop(){
         temporizador_3.detach();
       }
     }
+  //-3.4 Funciones tipo S.
+    void s1(int data_in_1, int data_in_2){
+      int Dato_Nuevo_1 = data_in_1;
+      int Dato_Nuevo_2 = data_in_2;
+      switch(incoming_sender){
+        case 1:
+          Node1.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 2:
+          Node2.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 3:
+          Node3.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 4:
+          Node4.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 5:
+          Node5.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 6:
+          Node6.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 7:
+          Node7.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 8:
+          Node8.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        case 9:
+          Node9.Update(Dato_Nuevo_1, Dato_Nuevo_2);
+          break;
+        default:
+          break;
 
+      }
+    }
 //4. Funciones UPDATE.
-  //-4.1 Estados de Zonas.
+  //-4.1 Estados de Entradas.
     void reviso(){
       if(localAddress==255) return;
       // 1. Pulsadores A y B Lectura.
@@ -1113,8 +1188,8 @@ void loop(){
         Zona_B_ACK=digitalRead(PB_ZB_in);        // pulsador B.
         Zona_AB_ACK=digitalRead(PB_ZC_in);    // pulsador C, Pulsador por defecto PRG.
       // 2. Zona A y Zona B Lectura.
-        Zona_A_ST=digitalRead(Zona_A_in);
-        Zona_B_ST=digitalRead(Zona_B_in);
+        Zona_A_ax=digitalRead(Zona_A_in);
+        Zona_B_ax=digitalRead(Zona_B_in);
       // 3. Bateria o Fuente Lectura.
         Fuente_in_ST=digitalRead(Fuente_in);
 
@@ -1149,16 +1224,18 @@ void loop(){
         }
 
       // 7. ZONA A ACTIVA.
-        if(!Zona_A_ST){
+        if(!Zona_A_ax){
           bitSet(Zonas, Zona_A);
+          Zona_A_ST=true;
         }
       // 8. ZONA B ACTIVA.
-          if(!Zona_B_ST){
+          if(!Zona_B_ax){
             bitSet(Zonas, Zona_B);
+            Zona_B_ST=true;
           }
-      // 10.ZONAS para mostrar en Pantalla  OLED
-        Zona_A_str=String(!Zona_A_ST, BIN);
-        Zona_B_str=String(!Zona_B_ST, BIN);
+      // 10 ZONAS para mostrar en Pantalla  OLED
+        Zona_A_str=String(!Zona_A_ax, BIN);
+        Zona_B_str=String(!Zona_B_ax, BIN);
 
         Zona_A_ACK_str=String(!Zona_A_ACK, BIN);
         Zona_B_ACK_str=String(!Zona_B_ACK, BIN);
@@ -1197,15 +1274,14 @@ void loop(){
             temporizador_2.once_ms(wakeUpTime,ISR_temporizador_2);
             temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
           }
-        //1.4 Modo NODO  >> MASTER.
-      
+        //1.4 Modo NODO  >> MASTER.    
         //1.5 Modo Particular
           if(incoming_recipient==localAddress   && incoming_sender==master){
             b3();
             temporizador_2.once_ms(fastTime, ISR_temporizador_2);
             flag_F_T2_run=true;
           }
-        //1.6 Modo NODO  >> PRINCIPAL.
+        //1.6 Modo NODO >> PRINCIPAL.
           if(localAddress==Nodo_actual          && flag_F_nodoRequest){
             b6();
             beforeTime_2 = millis();  // despurar.
@@ -1213,9 +1289,9 @@ void loop(){
             flag_F_T2_run=true;
           } 
         //1.7 Modo NODO >> BROADCAST CONTINUO (Prueba).
-        if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
-            b3();
-        }
+          if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
+              b3();
+          }
       
         //1.8 Modo NODO Inicio Automatico
           if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master){
@@ -1244,121 +1320,149 @@ void loop(){
   //-4.3 Sever Update.  
     void serverUpdate(){
       flag_F_updateServer=false;
-      Serial.print("Nodo: ");
-      Serial.print(incoming_sender);
-      Serial.print(" ");
-      Serial.println(incoming_function);
-    //-4.3.1 SI HE LEIDO TODOS LOS NODOS
-      if(Nodos_LSB_ACK==15){
-        if(Zonas_LSB_Estados==0){
-          Serial.println("SEC,ALL,0,0");
-          Serial.println("SEC,ALL,0,0");
-          return;
-        }
+      if(flag_F_depurar){
+        Serial.print("Nodo: ");
+        Serial.print(incoming_sender);
+        Serial.print(" ");
+        Serial.println(incoming_function);
       }
+      switch(incoming_sender){
+        case 1:
+          Node1.Estado();
+          break;
+        case 2:
+          Node2.Estado();
+          break;
+        case 3:
+          Node3.Estado();
+          break;
+        case 4:
+          Node4.Estado();
+          break;
+        case 5:
+          Node5.Estado();
+          break;
+        case 6:
+          Node6.Estado();
+          break;
+        case 7:
+          Node8.Estado();        
+          break;
+        case 8:
+          Node8.Estado();
+          break;
+      }
+    //-4.3.1 SI HE LEIDO TODOS LOS NODOS
+      // if(Nodos_LSB_ACK==15){
+      //   if(Zonas_LSB_Estados==0){
+      //     Serial.println("SEC,ALL,0,0");
+      //     Serial.println("SEC,ALL,0,0");
+      //     return;
+      //   }
+      // }
       // Nodo 1.
-        if(bitRead(Nodos_LSB_ACK, 1)){
-          //-1.1 Zonas NO OK.  
-            if(bitRead(Zonas_LSB_Estados, P1ZA) && !bitRead(ZonasF_LSB_Estados, P1ZA)){
-              Serial.println("SEC,NOK,1,A");
-              if(Node1.Zone_A_FAL) 
-                Serial.println("BAT,NOK,1,A");
-            }
-            if(bitRead(Zonas_LSB_Estados, P1ZB) && !bitRead(ZonasF_LSB_Estados, P1ZB)){
-              Serial.println("SEC,NOK,1,B");
-              if(Node1.Zone_B_FAL)
-                Serial.println("BAT,NOK,1,B");
-            }
+        // if(bitRead(Nodos_LSB_ACK, 1)){
+        //   //-1.1 Zonas NO OK.
+        //     if(bitRead(Zonas_LSB_Estados, P1ZA) && !bitRead(ZonasF_LSB_Estados, P1ZA)){
+        //       Serial.println("SEC,NOK,1,A");
+        //       if(Node1.Zone_A_FAL) 
+        //         Serial.println("BAT,NOK,1,A");
+        //     }
+        //     if(bitRead(Zonas_LSB_Estados, P1ZB) && !bitRead(ZonasF_LSB_Estados, P1ZB)){
+        //       Serial.println("SEC,NOK,1,B");
+        //       if(Node1.Zone_B_FAL)
+        //         Serial.println("BAT,NOK,1,B");
+        //     }
 
-          //-1.2 Zonas Falla Constante
-            if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(ZonasF_LSB_Estados, P1ZA)){
-              Serial.println("SEC,ERR,1,A");
-            }
-            if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(ZonasF_LSB_Estados, P1ZB)){
-              Serial.println("SEC,ERR,1,B");
-            }
+        //   //-1.2 Zonas Falla Constante
+        //     if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(ZonasF_LSB_Estados, P1ZA)){
+        //       Serial.println("SEC,ERR,1,A");
+        //     }
+        //     if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(ZonasF_LSB_Estados, P1ZB)){
+        //       Serial.println("SEC,ERR,1,B");
+        //     }
 
-          //-1.3 Zonas OK
-            if(!bitRead(Zonas_LSB_Estados, P1ZA)){
-              Serial.println("SEC,BOK,1,A");
-              if(Node1.Zone_A_FAL) 
-                Serial.println("BAT,BOK,1,A");
-              if(!Node1.Zone_A_FAL) 
-                Serial.println("BAT,BOK,1,B");  
-            }
-            if(!bitRead(Zonas_LSB_Estados, P1ZB)){
-              Serial.println("SEC,BOK,1,B");
-            }
-          //-1.4 Zonas con Bateria
-            
-        }
+        //   //-1.3 Zonas OK
+        //     if(!bitRead(Zonas_LSB_Estados, P1ZA)){
+        //       Serial.println("SEC,BOK,1,A");
+        //       if(Node1.Zone_A_FAL) 
+        //         Serial.println("BAT,BOK,1,A");
+        //       if(!Node1.Zone_A_FAL) 
+        //         Serial.println("BAT,BOK,1,B");  
+        //     }
+        //     if(!bitRead(Zonas_LSB_Estados, P1ZB)){
+        //       Serial.println("SEC,BOK,1,B");
+        //     }
+        //   //-1.4 Zonas con Bateria  
+        // }
       // Nodo 2.
-        if(bitRead(Nodos_LSB_ACK, 2)){
-          if(Node1.Zone_A_FAL) 
-            Serial.println("BAT,BOK,2,A");
-          if(!Node1.Zone_A_FAL) 
-            Serial.println("BAT,BOK,2,B"); 
-          //-2.1 Zonas No Ok.
-            if(bitRead(Zonas_LSB_Estados, P2ZA) && !bitRead(ZonasF_LSB_Estados, P2ZA)){
-              Serial.println("SEC,NOK,2,A");
-            }
-            if(bitRead(Zonas_LSB_Estados, P2ZB) && !bitRead(ZonasF_LSB_Estados, P2ZB)){
-              Serial.println("SEC,NOK,2,B");
-            }
-          //-2.2 Zonas Fallan Constante.
-            if(bitRead(Zonas_LSB_Estados, P2ZA) && bitRead(ZonasF_LSB_Estados, P2ZA)){
-              Serial.println("SEC,ERR,2,A");
-            }
-            if(bitRead(Zonas_LSB_Estados, P2ZB) && bitRead(ZonasF_LSB_Estados, P2ZB)){
-              Serial.println("SEC,ERR,2,B");
-            }
-          //-2.3 Zonas OK
-            if(!bitRead(Zonas_LSB_Estados, P2ZA)){
-              Serial.println("SEC,BOK,2,A");
-            }
-            if(!bitRead(Zonas_LSB_Estados, P2ZB)){
-              Serial.println("SEC,BOK,2,B");
-            }        
-        }
+        // if(bitRead(Nodos_LSB_ACK, 2)){
+        //   if(Node1.Zone_A_FAL) 
+        //     Serial.println("BAT,BOK,2,A");
+        //   if(!Node1.Zone_A_FAL) 
+        //     Serial.println("BAT,BOK,2,B"); 
+        //   //-2.1 Zonas No Ok.
+        //     if(bitRead(Zonas_LSB_Estados, P2ZA) && !bitRead(ZonasF_LSB_Estados, P2ZA)){
+        //       Serial.println("SEC,NOK,2,A");
+        //     }
+        //     if(bitRead(Zonas_LSB_Estados, P2ZB) && !bitRead(ZonasF_LSB_Estados, P2ZB)){
+        //       Serial.println("SEC,NOK,2,B");
+        //     }
+        //   //-2.2 Zonas Fallan Constante.
+        //     if(bitRead(Zonas_LSB_Estados, P2ZA) && bitRead(ZonasF_LSB_Estados, P2ZA)){
+        //       Serial.println("SEC,ERR,2,A");
+        //     }
+        //     if(bitRead(Zonas_LSB_Estados, P2ZB) && bitRead(ZonasF_LSB_Estados, P2ZB)){
+        //       Serial.println("SEC,ERR,2,B");
+        //     }
+        //   //-2.3 Zonas OK
+        //     if(!bitRead(Zonas_LSB_Estados, P2ZA)){
+        //       Serial.println("SEC,BOK,2,A");
+        //     }
+        //     if(!bitRead(Zonas_LSB_Estados, P2ZB)){
+        //       Serial.println("SEC,BOK,2,B");
+        //     }        
+        // }
       // Nodo 3.
-        if(bitRead(Nodos_LSB_ACK, 3)){
-          //-3.1 Zonas No Ok.
-            if(bitRead(Zonas_LSB_Estados, P3ZA) && !bitRead(ZonasF_LSB_Estados, P3ZA)){
-              Serial.println("SEC,NOK,3,A");
-            }
-            if(bitRead(Zonas_LSB_Estados, P3ZB) && !bitRead(ZonasF_LSB_Estados, P3ZB)){
-              Serial.println("SEC,NOK,3,B");
-            }
-          //-3.2 Zonas Fallan Constante.
-            if(bitRead(Zonas_LSB_Estados, P3ZA) && bitRead(ZonasF_LSB_Estados, P3ZA)){
-              Serial.println("SEC,ERR,3,A");
-            }
-            if(bitRead(Zonas_LSB_Estados, P3ZB) && bitRead(ZonasF_LSB_Estados, P3ZB)){
-              Serial.println("SEC,ERR,3,B");
-            }
-          //-3.3 Zonas OK
-            if(!bitRead(Zonas_LSB_Estados, P3ZA)){
-              Serial.println("SEC,BOK,3,A");
-            }
-            if(!bitRead(Zonas_LSB_Estados, P3ZB)){
-              Serial.println("SEC,BOK,3,B");
-            }        
-        }
+        // if(bitRead(Nodos_LSB_ACK, 3)){
+        //   //-3.1 Zonas No Ok.
+        //     if(bitRead(Zonas_LSB_Estados, P3ZA) && !bitRead(ZonasF_LSB_Estados, P3ZA)){
+        //       Serial.println("SEC,NOK,3,A");
+        //     }
+        //     if(bitRead(Zonas_LSB_Estados, P3ZB) && !bitRead(ZonasF_LSB_Estados, P3ZB)){
+        //       Serial.println("SEC,NOK,3,B");
+        //     }
+        //   //-3.2 Zonas Fallan Constante.
+        //     if(bitRead(Zonas_LSB_Estados, P3ZA) && bitRead(ZonasF_LSB_Estados, P3ZA)){
+        //       Serial.println("SEC,ERR,3,A");
+        //     }
+        //     if(bitRead(Zonas_LSB_Estados, P3ZB) && bitRead(ZonasF_LSB_Estados, P3ZB)){
+        //       Serial.println("SEC,ERR,3,B");
+        //     }
+        //   //-3.3 Zonas OK
+        //     if(!bitRead(Zonas_LSB_Estados, P3ZA)){
+        //       Serial.println("SEC,BOK,3,A");
+        //     }
+        //     if(!bitRead(Zonas_LSB_Estados, P3ZB)){
+        //       Serial.println("SEC,BOK,3,B");
+        //     }        
+        // }
       // Nodo 4.
-        if(bitRead(Nodos_LSB_ACK, 4)){
-          if(bitRead(Zonas_LSB_Estados, P4ZA)){
-            Serial.println("SEC,NOK,4,A");
-          }
-          if(bitRead(Zonas_LSB_Estados, P4ZB)){
-            Serial.println("SEC,NOK,4,B");
-          }
-          if(!bitRead(Zonas_LSB_Estados, P4ZA)){
-            Serial.println("SEC,BOK,4,A");
-          }
-          if(!bitRead(Zonas_LSB_Estados, P4ZB)){
-            Serial.println("SEC,BOK,4,B");
-          }
-        }
+        // if(bitRead(Nodos_LSB_ACK, 4)){
+        //   if(bitRead(Zonas_LSB_Estados, P4ZA)){
+        //     Serial.println("SEC,NOK,4,A");
+        //   }
+        //   if(bitRead(Zonas_LSB_Estados, P4ZB)){
+        //     Serial.println("SEC,NOK,4,B");
+        //   }
+        //   if(!bitRead(Zonas_LSB_Estados, P4ZA)){
+        //     Serial.println("SEC,BOK,4,A");
+        //   }
+        //   if(!bitRead(Zonas_LSB_Estados, P4ZB)){
+        //     Serial.println("SEC,BOK,4,B");
+        //   }
+        // }
+    
     }
   //-4.4 Actualizar.  
     void actualizar(){
@@ -1385,11 +1489,22 @@ void loop(){
           zonesLSB=Zonas_LSB_Estados;
           zonesMSB=Zonas_MSB_Estados;
 
-        //.1.5 Varibles para Pantalla OLED.
+        //-1.5 Varibles para Pantalla OLED.
           Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
           Zonas_LSB_str |=zonesLSB;
-      
-      //2. ESTADOS DE NODOS. 
+      //2. Estados de Entradas.
+
+        if(localAddress<255){
+          bitWrite(nodo_local,0, Zona_A_ST);
+          bitWrite(nodo_local,1, zona_1_err);
+          bitWrite(nodo_local,2, Zona_B_ST);
+          bitWrite(nodo_local,3, zona_2_err);
+          bitWrite(nodo_local,4, Fuente_in_ST);
+          bitWrite(nodo_local,5, timer_nodo_ST);
+          codigo="S1";
+          codigo+=nodo_local;
+        }
+      //3. ESTADOS DE NODOS. 
         if(flag_F_PAQUETE){
         //-2.1 bit MAESTRO LEIDO Si el mensaje es del Maestro, Activar el Bit 0.
           if(incoming_sender==master || localAddress==master){
@@ -1421,60 +1536,8 @@ void loop(){
           if(incoming_sender==Nodo_anterior){
             flag_F_nodo_Anterior=true;
           }
-        //-2.8 Nodos Reconocidos.
-          switch(incoming_sender){
-            case 1:
-              Node1.Ack(incomingFuntion);
-              break;
-            case 2:
-              Node2.Ack(incomingFuntion);
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 3:
-              nodo3 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 4:
-              nodo4 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 5:
-              nodo5 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 6:
-              nodo6 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 7:
-              nodo7 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 8:
-              nodo8 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 9:
-              nodo9 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 10:
-              nodo10 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 11:
-              nodo11 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            case 12:
-              nodo12 ++;
-              if(nodo == 2) flag_ST_nodo1 = true;
-              break;
-            default:
-              break;
-          }
         }
-      //3. Zonas en Falla.
+      //4. Zonas en Falla.
         Zonas_Fallan_LSB=lowByte(Zonas_Fallan);
         Zonas_Fallan_MSB=highByte(Zonas_Fallan);
         
@@ -1497,7 +1560,7 @@ void loop(){
         ZonasF_LSB_str |= zonaFLSB;
 
 
-      //4. Pantalla. (Cada espacio equivale a 8)
+      //5. Pantalla. (Cada espacio equivale a 8)
         // Tiempo transcurrido para Timer 1
           if(flag_F_T1_run){
             currentTime_1=millis();
@@ -1611,8 +1674,7 @@ void loop(){
         Nodos_LSB_ACK=0;
       //4 FALLA CONSTANTE.
         //-4.1 FALLA ZONA_A
-          if(!Zona_A_ST && !zona_1_err)
-          {
+          if(!Zona_A_ax && !zona_1_err){
             ++ zona_1;
             if(zona_1==Zonas_Falla_Time)
             {
@@ -1621,7 +1683,7 @@ void loop(){
             }
           }
         //-4.2 FALLA ZONA_B.
-          if(!Zona_B_ST && !zona_2_err){
+          if(!Zona_B_ax && !zona_2_err){
              ++ zona_2;
              if(zona_2==Zonas_Falla_Time){
                zona_2=0;
@@ -1638,8 +1700,8 @@ void loop(){
           }
         //-4.3 Reset contador
           // si el contador no llega al set point y se reestableció la zona
-          if(Zona_A_ST && zona_1>0) zona_1=0;
-          if(Zona_B_ST && zona_2>0) zona_2=0;
+          if(Zona_A_ax && zona_1>0) zona_1=0;
+          if(Zona_B_ax && zona_2>0) zona_2=0;
       //5 Flag clear Timer 1 and 2.
         flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
       //6 Mensajes recibidos

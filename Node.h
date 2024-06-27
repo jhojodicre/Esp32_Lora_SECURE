@@ -13,13 +13,18 @@ class Node{
 
         bool Zone_Check;
     public:
-        Node();
+        Node(int nodo_numero);
         void Ack(char functionCode);
         int GetAckNum();
         void Coming (char nodeCode);
+        void Update(int Nodo_Source_1, int Nodo_Source_2);
+        void Estado();
         
-        int Zone_A;
-        int Zone_B;
+        int Zone_A_Num;
+        int Zone_B_Num;
+
+        bool Zone_A;
+        bool Zone_B;
 
         bool Zone_A_ACK;
         bool Zone_B_ACK;
@@ -29,11 +34,39 @@ class Node{
 
         bool Zone_A_FAL;
         bool Zone_B_FAL;
+        String Zone_A_FAL_str;
+        String Zone_B_FAL_str;
 
         bool Zone_A_ALR;
         bool Zone_B_ALR;
+        String Zone_A_ALR_str;
+        String Zone_B_ALR_str;
+        
+        bool Timer_ON;
+        String Timer_ON_str;
+        int  Node_Number;
+
+        #define  Timer_token_k  "2"
+        #define  Timer_ciclo_k  "1"
+
+        #define  ZONA_ACT "BOK"
+        #define  ZONA_DES "NOK"
+        #define  ZONA_OK "BOK"
+        #define  ZONA_FA "NOK"
+        #define  FUENTE_OK "1"
+        #define  BATERIA_OK "0"
+
 
         bool Zone_A_OK;
         bool Zone_B_OK;
+
+        char Funcion_Tipo;
+        char Funcion_Num;
+
+        bool Fuente;
+        String Fuente_str;
+        int Timero;
+
+        String Actual;
 };
 #endif   // fin de la definicion.
