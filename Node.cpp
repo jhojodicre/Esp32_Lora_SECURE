@@ -42,7 +42,7 @@ void Node::Coming(char nodeCode){
 }
 void Node::Update(int dato_actual_1, int dato_actual_2){
     int dato_recibido = dato_actual_1;
-    // ZA
+    // bit 0=ZA
     if(bitRead(dato_recibido, 0)){
         Zone_A_ALR=true;
         Zone_A_ALR_str=ZONA_ACT;
@@ -51,7 +51,7 @@ void Node::Update(int dato_actual_1, int dato_actual_2){
         Zone_A_ALR=false;
         Zone_A_ALR_str=ZONA_DES;
     }
-    // ZA FALLA
+    // bit 1=ZA FALLA
     if(bitRead(dato_recibido, 1)){
         Zone_A_FAL=true;
         Zone_A_FAL_str=ZONA_FA;
@@ -60,7 +60,7 @@ void Node::Update(int dato_actual_1, int dato_actual_2){
         Zone_A_FAL=false;
         Zone_A_FAL_str=ZONA_DES;
     }
-    // ZB
+    // bit 2=ZB
     if(bitRead(dato_recibido, 2)){
         Zone_B_ALR=true;
         Zone_B_ALR_str=ZONA_ACT;
@@ -69,7 +69,7 @@ void Node::Update(int dato_actual_1, int dato_actual_2){
         Zone_B_ALR=false;
         Zone_B_ALR_str=ZONA_DES;
     }
-    // ZB FALLA
+    // bit 3=ZB FALLA
     if(bitRead(dato_recibido, 3)){
         Zone_B_FAL=true;
         Zone_B_FAL_str=ZONA_FA;
@@ -78,7 +78,7 @@ void Node::Update(int dato_actual_1, int dato_actual_2){
         Zone_B_FAL=false;
         Zone_B_FAL_str=ZONA_DES;
     }
-    // FUENTE
+    // bit 4=FUENTE
     if(bitRead(dato_recibido, 4)){
         Fuente=true;
         Fuente_str=FUENTE_OK;
@@ -87,7 +87,7 @@ void Node::Update(int dato_actual_1, int dato_actual_2){
         Fuente=false;
         Fuente_str=BATERIA_OK;
     }
-    // timer
+    // bit 5=timer
     if(bitRead(dato_recibido, 5)){
         Timer_ON=true;
         Timer_ON_str=Timer_ciclo_k;
