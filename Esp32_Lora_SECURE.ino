@@ -387,11 +387,12 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0x01;
+      localAddress    = 0xFF;
       Nodos           = 4;
-      Zonas_Falla_Time= 5;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
       Nodo_primero    = 1;
-      Nodo_ultimo     = 4;
+      // Nodo_ultimo     = 3;
+      Nodo_ultimo     = Nodos;
+      Zonas_Falla_Time= 5;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
       MODE            = MASTER;
       Nodo_Modo       = MASTER;
       Nodos_y_Master  = Nodos +1;    // Numero de Nodos + Master.
@@ -414,13 +415,6 @@ void setup(){
         Nodo_Name="NODO:";
         flag_F_Master_Enable=false;
         flag_F_Node_Enable=true;
-      }
-      if(localAddress==Nodo_primero){
-        Nodo_anterior=Nodo_ultimo;
-      }
-      if(localAddress==Nodo_ultimo){
-        flag_F_Nodo_Ultimo=true;
-        Nodo_siguiente=Nodo_primero;
       }
       if(localAddress==Nodo_primero){
         Nodo_anterior=Nodo_ultimo;
@@ -503,7 +497,7 @@ void loop(){
         temporizador_1.attach_ms(1000, ISR_temporizador_1);
         beforeTime_1=millis();
         flag_F_T1_run=true;
-        nodo_proximo=Nodo_primero;
+        nodo_proximo=Nodo_primero-1;
       }
       else{
         if(MODE==INDEPENDIENTE){
@@ -1035,7 +1029,7 @@ void loop(){
       void b3 (){
         // Informacion Acerca de los nodos que pude LEER.
         // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-        destination=master;                           // Respondo a quien me escribe.
+        destination=0XFF;                           // Respondo aL maestro.
         // 2. Remitente.
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
         // 3. Zonas Leidas 1.
@@ -1765,8 +1759,12 @@ void loop(){
     }
   //4.6 PROXIMO NODO.
     void Nodo_REQUEST(){
-      if(nodo_proximo<=Nodo_ultimo) ++ nodo_proximo;
-      if(nodo_proximo==Nodo_ultimo) nodo_proximo=Nodo_primero;
+      if(nodo_proximo==Nodo_ultimo){
+        nodo_proximo=Nodo_primero-1;
+      }
+      if(nodo_proximo<=Nodo_ultimo) {
+        ++ nodo_proximo;
+      }
     }
 //5. Funciones de Dispositivos Externos.
   //-5.1 RFM95 RECIBIR.
@@ -1775,12 +1773,12 @@ void loop(){
       // read packet header bytes:
       incoming_recipient = LoRa.read();    // incoming_recipient address
       incoming_sender    = LoRa.read();    // incoming_sender address
-      incoming_zonesLSB  = LoRa.read();    // incoming_function msg ID.
-      incoming_zonesMSB  = LoRa.read();    // incoming_function msg ID.
-      incoming_nodosLSB  = LoRa.read();    // incoming_function Nodos Reportados LSB.
-      incoming_nodosMSB  = LoRa.read();    // incoming_function Nodos Reportados MSB.
-      incoming_zonaFLSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
-      incoming_zonaFMSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
+      // incoming_zonesLSB  = LoRa.read();    // incoming_function msg ID.
+      // incoming_zonesMSB  = LoRa.read();    // incoming_function msg ID.
+      // incoming_nodosLSB  = LoRa.read();    // incoming_function Nodos Reportados LSB.
+      // incoming_nodosMSB  = LoRa.read();    // incoming_function Nodos Reportados MSB.
+      // incoming_zonaFLSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
+      // incoming_zonaFMSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
       incoming_length    = LoRa.read();    // incoming_function msg length
       incoming_function  = "";
       while (LoRa.available()){
@@ -1831,12 +1829,12 @@ void loop(){
       LoRa.beginPacket();             // start packet
       LoRa.write(destination);        // add destination address
       LoRa.write(localAddress);       // add incoming_sender address
-      LoRa.write(zonesLSB);           // add message ID
-      LoRa.write(zonesMSB);           // add message ID
-      LoRa.write(nodosLSB);
-      LoRa.write(nodosMSB);
-      LoRa.write(zonaFLSB);
-      LoRa.write(zonaFMSB);
+      // LoRa.write(zonesLSB);           // add message ID
+      // LoRa.write(zonesMSB);           // add message ID
+      // LoRa.write(nodosLSB);
+      // LoRa.write(nodosMSB);
+      // LoRa.write(zonaFLSB);
+      // LoRa.write(zonaFMSB);
       LoRa.write(outgoing.length());  // add payload length
       LoRa.print(outgoing);           // add payload
       LoRa.endPacket();               // finish packet and send it
@@ -1875,6 +1873,8 @@ void loop(){
       // DEBUG
       if(flag_F_depurar){
         Serial.println(".");
+        
+        Serial.println("Sent to: 0x" + String(destination, HEX));
       }
     }
 

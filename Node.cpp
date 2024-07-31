@@ -98,7 +98,9 @@ void Node::Update(int dato_actual_1, int dato_actual_2){
     }
 }
 void Node::Estado(){
-    Serial.println("SEC,"+Zone_A_ALR_str+","+Node_Number+",A");
+    Serial.println("SEC,");
+    Serial.println(Zone_A_ALR_str,);
+    Serial.println(","+Node_Number+",A");
     Serial.println("SEC,"+Zone_B_ALR_str+","+Node_Number+",B");
 }
  

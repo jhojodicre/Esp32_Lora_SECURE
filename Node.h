@@ -39,8 +39,8 @@ class Node{
 
         bool Zone_A_ALR;
         bool Zone_B_ALR;
-        String Zone_A_ALR_str;
-        String Zone_B_ALR_str;
+        char Zone_A_ALR_str[]="";
+        char Zone_B_ALR_str[]="";
         
         bool Timer_ON;
         String Timer_ON_str;
@@ -49,12 +49,12 @@ class Node{
         #define  Timer_token_k  "2"
         #define  Timer_ciclo_k  "1"
 
-        #define  ZONA_ACT "BOK"
-        #define  ZONA_DES "NOK"
-        #define  ZONA_OK "BOK"
-        #define  ZONA_FA "NOK"
-        #define  FUENTE_OK "1"
-        #define  BATERIA_OK "0"
+        char  ZONA_ACT []="BOK";
+        char  ZONA_DES[] ="NOK";
+        char  ZONA_OK[]="BOK";
+        char  ZONA_FA[] ="NOK";
+        char  FUENTE_OK[]= "1";
+        char  BATERIA_OK[]= "0";
 
 
         bool Zone_A_OK;
