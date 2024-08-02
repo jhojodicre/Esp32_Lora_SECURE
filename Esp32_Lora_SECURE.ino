@@ -14,8 +14,8 @@
   //-2.1 ENTRADAS= Definicion de etiquetas para las Entradas.
     #define Zona_A_in     32        // 32 Entrada de Zona 1
     #define Zona_B_in     33        // 33 Entrada de Zona 2
-    #define PB_ZA_in      39        // Pulsador A= Resetea o reconoce "ACK" la Zona A
-    #define PB_ZB_in      38        // Pulsador B= Resetea o reconoce "ACK" la Zona B
+    #define PB_ZA_in      38        // Pulsador A= Resetea o reconoce "ACK" la Zona A
+    #define PB_ZB_in      39        // Pulsador B= Resetea o reconoce "ACK" la Zona B
     #define PB_ZC_in      0         // Pulsador C= Resetea o reconoce "ACK" las Zona AB (Entrada de Pulsador por Defecto PB_ZC_in.)
     #define Fuente_in     22
 
@@ -72,10 +72,10 @@
     String        funtion_Parmeter4;      // Parametro para las Funciones remotas.
     String        function_Remote;
     String        function_Enable;
-    int  x1=0;
-    volatile int  x2=0;
-    volatile int  x3=0;
-    volatile int  x4=0;
+    uint           x1=0;
+    volatile uint  x2=0;
+    volatile uint  x3=0;
+    volatile uint  x4=0;
   //-3.2 Variables Banderas.
     bool          flag_F_codified_funtion=false;   // Notifica que la funcion ha sido codificada.
     bool          flag_F_Un_segundo=false;         // Se activa cuando Pasa un Segundo por Interrupcion.
@@ -387,7 +387,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0xFF;
+      localAddress    = 0x03;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -564,10 +564,11 @@ void loop(){
           codigo=function_Remote;
         }
         // codigo="S2" + Fuente_in_str + temporizador_2_str;//"TK";
-        Nodo_REQUEST();
-        b7();
-        flag_F_Master_Esperando=true; // Master indica que queda esperando un mensaje
-      
+        if(flag_F_Master_Enable){
+          Nodo_REQUEST();
+          b7();
+          flag_F_Master_Esperando=true; // Master indica que queda esperando un mensaje
+        }
         flag_F_tokenTime=true;
         flag_F_responder=true;
         timer_nodo_ST=false;
@@ -1170,8 +1171,8 @@ void loop(){
       }
     }
   //-3.4 Funciones tipo S.
-    void s1(int data_in_1, int data_in_2){
-      int Dato_Nuevo_1 = data_in_1;   // Estado del nodo
+    void s1(uint data_in_1, int data_in_2){
+      uint Dato_Nuevo_1 = data_in_1;   // Estado del nodo
       int Dato_Nuevo_2 = data_in_2;   
       switch(incoming_sender){
         case 1:
@@ -1249,6 +1250,7 @@ void loop(){
           bitClear(Zonas_Fallan, Zona_A);
           zona_1_err=false;
           Zona_A_F_str='.';
+          Zona_A_ST=false;
         }
       // 6. ZONA B RESET= Zona B aceptada desde el pulsador activo en bajo "0"
         if(!Zona_B_ACK){
@@ -1256,6 +1258,7 @@ void loop(){
           bitClear(Zonas_Fallan, Zona_B);
           zona_2_err=false;
           Zona_B_F_str='.';        
+          Zona_B_ST=false;
         }
 
       // 7. ZONA A ACTIVA.
@@ -1269,8 +1272,8 @@ void loop(){
             Zona_B_ST=true;
           }
       // 10 ZONAS para mostrar en Pantalla  OLED
-        Zona_A_str=String(!Zona_A_ax, BIN);
-        Zona_B_str=String(!Zona_B_ax, BIN);
+        Zona_A_str=String(Zona_A_ST, BIN);
+        Zona_B_str=String(Zona_B_ST, BIN);
 
         Zona_A_ACK_str=String(!Zona_A_ACK, BIN);
         Zona_B_ACK_str=String(!Zona_B_ACK, BIN);
@@ -1354,14 +1357,9 @@ void loop(){
           }
         //-2.3 Modo MASTER Recepciona Mensaje del NODO.
           if(incoming_recipient==master             && incoming_sender==destination){
-            
-            
+            Serial.println("Nod:"+nodo_proximo);
             temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
             temporizador_1.attach_ms(masterTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
-            
-            
-            Serial.println("Nod:"+nodo_proximo);
-            // temporizador_2.once_ms(fastTime, ISR_temporizador_2);
             flag_F_Master_Esperando=false;       // DESPUES QUE EL MAESTRO RECIBE EL MENSAJE DEL NODO ACTUALIYA LA BANDERA mMASTER ESPERA A FALSE
             // flag_F_T2_run=true;
           }
@@ -1379,15 +1377,19 @@ void loop(){
       switch(incoming_sender){
         case 1:
           Node1.Estado();
+          Serial.println(x1);
           break;
         case 2:
           Node2.Estado();
+          Serial.println(x1);
           break;
         case 3:
           Node3.Estado();
+          Serial.println(x1);
           break;
         case 4:
           Node4.Estado();
+          Serial.println(x1);
           break;
         case 5:
           Node5.Estado();
@@ -1553,6 +1555,7 @@ void loop(){
           bitWrite(nodo_local,5, timer_nodo_ST);
           codigo+=nodo_local;
           codigo+=nodo_Status;
+          Serial.println(nodo_local, BIN);
         }
       //3. ESTADOS DE NODOS. 
         if(flag_F_PAQUETE){
@@ -1696,10 +1699,10 @@ void loop(){
               }
           // PULSADOR A
               Heltec.display->drawString(75, 50, "PA:");
-              Heltec.display->drawString(93, 50, Zona_B_ACK_str);
+              Heltec.display->drawString(93, 50, Zona_A_ACK_str);
           // PULSADOR B
               Heltec.display->drawString(102, 50, "PB:");
-              Heltec.display->drawString(119, 50, Zona_A_ACK_str);
+              Heltec.display->drawString(119, 50, Zona_B_ACK_str);
             }
             else{
               // Nodos reconocidos Propiamente.
@@ -1757,7 +1760,7 @@ void loop(){
       //6 Mensajes recibidos
         // Node1.GetAckNum();
     }
-  //4.6 PROXIMO NODO.
+  //-4.6 PROXIMO NODO.
     void Nodo_REQUEST(){
       if(nodo_proximo==Nodo_ultimo){
         nodo_proximo=Nodo_primero-1;
@@ -1866,14 +1869,17 @@ void loop(){
       incoming_recipient=0;
       //NODO+-+-+-+-
       //Borrar datos leidos porcada ciclo de lectura de todos los nodos.
-      if(localAddress<255)
+      if(localAddress<255){
         Nodos_LSB_ACK=0;
         nodos_LSB_MERGE=0;
         nodo_Status="";
+        Serial.println(".");
+      }
+
       // DEBUG
       if(flag_F_depurar){
-        Serial.println(".");
         
+        Serial.println(".");
         Serial.println("Sent to: 0x" + String(destination, HEX));
       }
     }

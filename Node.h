@@ -8,16 +8,15 @@ class Node{
         bool zoneA=0;
         bool zoneB=0;
         int nodeACK=0;             // Numero de Veces que el nodo a Sido Reconocido por el Maestro.
-        
-
-
         bool Zone_Check;
+
+
     public:
         Node(int nodo_numero);
         void Ack(char functionCode);
         int GetAckNum();
         void Coming (char nodeCode);
-        void Update(int Nodo_Source_1, int Nodo_Source_2);
+        void Update(uint Nodo_Source_1, int Nodo_Source_2);
         void Estado();
         
         int Zone_A_Num;
@@ -34,13 +33,15 @@ class Node{
 
         bool Zone_A_FAL;
         bool Zone_B_FAL;
+
         String Zone_A_FAL_str;
         String Zone_B_FAL_str;
 
         bool Zone_A_ALR;
         bool Zone_B_ALR;
-        char Zone_A_ALR_str[]="";
-        char Zone_B_ALR_str[]="";
+
+        String Zone_A_ALR_str;
+        String Zone_B_ALR_str;
         
         bool Timer_ON;
         String Timer_ON_str;
@@ -49,12 +50,13 @@ class Node{
         #define  Timer_token_k  "2"
         #define  Timer_ciclo_k  "1"
 
-        char  ZONA_ACT []="BOK";
-        char  ZONA_DES[] ="NOK";
-        char  ZONA_OK[]="BOK";
-        char  ZONA_FA[] ="NOK";
-        char  FUENTE_OK[]= "1";
-        char  BATERIA_OK[]= "0";
+        String  ZONA_ACT ="BOK";
+        String  ZONA_DES ="NOK";
+
+        String  ZONA_OK   ="BOK";
+        String  ZONA_FA  ="NOK";
+        String  FUENTE_OK = "1";
+        String  BATERIA_OK= "0";
 
 
         bool Zone_A_OK;
