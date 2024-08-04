@@ -50,8 +50,8 @@ class Node{
         #define  Timer_token_k  "2"
         #define  Timer_ciclo_k  "1"
 
-        String  ZONA_ACT ="BOK";
-        String  ZONA_DES ="NOK";
+        String  ZONA_ACT ="NOK";
+        String  ZONA_DES ="BOK";
 
         String  ZONA_OK   ="BOK";
         String  ZONA_FA  ="NOK";

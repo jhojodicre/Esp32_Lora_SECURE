@@ -387,7 +387,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0x03;
+      localAddress    = 0xFF;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -1547,12 +1547,12 @@ void loop(){
       //2. Estados de Entradas.
 
         if(localAddress<255){
-          bitWrite(nodo_local,0, Zona_A_ST);
-          bitWrite(nodo_local,1, zona_1_err);
-          bitWrite(nodo_local,2, Zona_B_ST);
-          bitWrite(nodo_local,3, zona_2_err);
-          bitWrite(nodo_local,4, Fuente_in_ST);
-          bitWrite(nodo_local,5, timer_nodo_ST);
+          bitWrite(nodo_local,1, Zona_A_ST);
+          bitWrite(nodo_local,2, zona_1_err);
+          bitWrite(nodo_local,3, Zona_B_ST);
+          bitWrite(nodo_local,4, zona_2_err);
+          bitWrite(nodo_local,5, Fuente_in_ST);
+          bitWrite(nodo_local,6, timer_nodo_ST);
           codigo+=nodo_local;
           codigo+=nodo_Status;
           Serial.println(nodo_local, BIN);
@@ -1712,6 +1712,8 @@ void loop(){
           }
         // MOSTAR
           Heltec.display->display();
+      //DEPURAR
+          
     }
   //-4.5 Analizar.
     void analizar(){
@@ -1878,7 +1880,6 @@ void loop(){
 
       // DEBUG
       if(flag_F_depurar){
-        
         Serial.println(".");
         Serial.println("Sent to: 0x" + String(destination, HEX));
       }
