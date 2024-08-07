@@ -426,12 +426,12 @@ void setup(){
       // BANDERAS
 
     //-2.3 Timer Answer.
-      tokenTime       = 400;
+      tokenTime       = 700;
       baseTime        = 400;
       updateTime      = 400;
       wakeUpTime      = tokenTime*localAddress;
       cycleTime       = tokenTime*(Nodos+1);
-      masterTime      = 1000;          // Cada 100 milisegundo el maetro le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000.
+      masterTime      = 2000;          // Cada 100 milisegundo el maetro le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000.
       firstTime       = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
       wakeUpTime      = 30.0;         // Este temporizador es para rresponder despues que el nodo despierta despues de mucho tiempo sin encender y es el unico que esta activo.
       chismeTime      = (10*Nodo_actual)+100;
@@ -596,7 +596,7 @@ void loop(){
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
       if(flag_F_responder){
-        actualizar();
+        // actualizar();
         RFM95_enviar(codigo);
       }
     //-5.2 RFM95 RECIBIR.
@@ -650,7 +650,7 @@ void loop(){
       Serial.println("Parametro2: " + funtion_Parmeter2);
       Serial.println("Parametro3: " + funtion_Parmeter3+ "\n");
     }
-  }  
+  }
   void ejecutar_solicitud(){
     x1=funtion_Parmeter1.toInt();
     x2=funtion_Parmeter2.toInt();
@@ -876,7 +876,7 @@ void loop(){
           if(flag_F_depurar){
             Serial.println("funion S N1");
           }
-          s1(x1,x2);
+          s1(incoming_zonesLSB,x2);
         }
         // if (funtion_Mode=="S" && funtion_Number=="2"){
         //   if(flag_F_depurar){
@@ -1035,7 +1035,8 @@ void loop(){
         //localAddress=String(Nodo).toInt();            // Establecer direccion Local.
         // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
-        zonesLSB=Zonas_LSB_Estados;
+        // zonesLSB=Zonas_LSB_Estados;
+        zonesLSB=nodo_local;
         // 4. Nodos Leidas.
         nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function
@@ -1045,6 +1046,7 @@ void loop(){
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         // 7. Byte Escrito desde recepcion Serial o Predefinido.
         codigo="S1";
+        codigo+=nodo_Status;
       }
       void b4 (){
         // MASTER BROADCAST
@@ -1171,8 +1173,8 @@ void loop(){
       }
     }
   //-3.4 Funciones tipo S.
-    void s1(uint data_in_1, int data_in_2){
-      uint Dato_Nuevo_1 = data_in_1;   // Estado del nodo
+    void s1(byte data_in_1, int data_in_2){
+      byte Dato_Nuevo_1 = data_in_1;   // Estado del nodo
       int Dato_Nuevo_2 = data_in_2;   
       switch(incoming_sender){
         case 1:
@@ -1357,7 +1359,6 @@ void loop(){
           }
         //-2.3 Modo MASTER Recepciona Mensaje del NODO.
           if(incoming_recipient==master             && incoming_sender==destination){
-            Serial.println("Nod:"+nodo_proximo);
             temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
             temporizador_1.attach_ms(masterTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
             flag_F_Master_Esperando=false;       // DESPUES QUE EL MAESTRO RECIBE EL MENSAJE DEL NODO ACTUALIYA LA BANDERA mMASTER ESPERA A FALSE
@@ -1377,19 +1378,19 @@ void loop(){
       switch(incoming_sender){
         case 1:
           Node1.Estado();
-          Serial.println(x1);
+          Serial.println(incoming_zonesLSB, BIN);
           break;
         case 2:
           Node2.Estado();
-          Serial.println(x1);
+          Serial.println(incoming_zonesLSB, BIN);
           break;
         case 3:
           Node3.Estado();
-          Serial.println(x1);
+          Serial.println(incoming_zonesLSB, BIN);
           break;
         case 4:
           Node4.Estado();
-          Serial.println(x1);
+          Serial.println(incoming_zonesLSB, BIN);
           break;
         case 5:
           Node5.Estado();
@@ -1404,117 +1405,6 @@ void loop(){
           Node8.Estado();
           break;
       }
-    //-4.3.1 SI HE LEIDO TODOS LOS NODOS
-      // if(Nodos_LSB_ACK==15){
-      //   if(Zonas_LSB_Estados==0){
-      //     Serial.println("SEC,ALL,0,0");
-      //     Serial.println("SEC,ALL,0,0");
-      //     return;
-      //   }
-      // }
-      // Nodo 1.
-        // if(bitRead(Nodos_LSB_ACK, 1)){
-        //   //-1.1 Zonas NO OK.
-        //     if(bitRead(Zonas_LSB_Estados, P1ZA) && !bitRead(ZonasF_LSB_Estados, P1ZA)){
-        //       Serial.println("SEC,NOK,1,A");
-        //       if(Node1.Zone_A_FAL) 
-        //         Serial.println("BAT,NOK,1,A");
-        //     }
-        //     if(bitRead(Zonas_LSB_Estados, P1ZB) && !bitRead(ZonasF_LSB_Estados, P1ZB)){
-        //       Serial.println("SEC,NOK,1,B");
-        //       if(Node1.Zone_B_FAL)
-        //         Serial.println("BAT,NOK,1,B");
-        //     }
-
-        //   //-1.2 Zonas Falla Constante
-        //     if(bitRead(Zonas_LSB_Estados, P1ZA) && bitRead(ZonasF_LSB_Estados, P1ZA)){
-        //       Serial.println("SEC,ERR,1,A");
-        //     }
-        //     if(bitRead(Zonas_LSB_Estados, P1ZB) && bitRead(ZonasF_LSB_Estados, P1ZB)){
-        //       Serial.println("SEC,ERR,1,B");
-        //     }
-
-        //   //-1.3 Zonas OK
-        //     if(!bitRead(Zonas_LSB_Estados, P1ZA)){
-        //       Serial.println("SEC,BOK,1,A");
-        //       if(Node1.Zone_A_FAL) 
-        //         Serial.println("BAT,BOK,1,A");
-        //       if(!Node1.Zone_A_FAL) 
-        //         Serial.println("BAT,BOK,1,B");  
-        //     }
-        //     if(!bitRead(Zonas_LSB_Estados, P1ZB)){
-        //       Serial.println("SEC,BOK,1,B");
-        //     }
-        //   //-1.4 Zonas con Bateria  
-        // }
-      // Nodo 2.
-        // if(bitRead(Nodos_LSB_ACK, 2)){
-        //   if(Node1.Zone_A_FAL) 
-        //     Serial.println("BAT,BOK,2,A");
-        //   if(!Node1.Zone_A_FAL) 
-        //     Serial.println("BAT,BOK,2,B"); 
-        //   //-2.1 Zonas No Ok.
-        //     if(bitRead(Zonas_LSB_Estados, P2ZA) && !bitRead(ZonasF_LSB_Estados, P2ZA)){
-        //       Serial.println("SEC,NOK,2,A");
-        //     }
-        //     if(bitRead(Zonas_LSB_Estados, P2ZB) && !bitRead(ZonasF_LSB_Estados, P2ZB)){
-        //       Serial.println("SEC,NOK,2,B");
-        //     }
-        //   //-2.2 Zonas Fallan Constante.
-        //     if(bitRead(Zonas_LSB_Estados, P2ZA) && bitRead(ZonasF_LSB_Estados, P2ZA)){
-        //       Serial.println("SEC,ERR,2,A");
-        //     }
-        //     if(bitRead(Zonas_LSB_Estados, P2ZB) && bitRead(ZonasF_LSB_Estados, P2ZB)){
-        //       Serial.println("SEC,ERR,2,B");
-        //     }
-        //   //-2.3 Zonas OK
-        //     if(!bitRead(Zonas_LSB_Estados, P2ZA)){
-        //       Serial.println("SEC,BOK,2,A");
-        //     }
-        //     if(!bitRead(Zonas_LSB_Estados, P2ZB)){
-        //       Serial.println("SEC,BOK,2,B");
-        //     }        
-        // }
-      // Nodo 3.
-        // if(bitRead(Nodos_LSB_ACK, 3)){
-        //   //-3.1 Zonas No Ok.
-        //     if(bitRead(Zonas_LSB_Estados, P3ZA) && !bitRead(ZonasF_LSB_Estados, P3ZA)){
-        //       Serial.println("SEC,NOK,3,A");
-        //     }
-        //     if(bitRead(Zonas_LSB_Estados, P3ZB) && !bitRead(ZonasF_LSB_Estados, P3ZB)){
-        //       Serial.println("SEC,NOK,3,B");
-        //     }
-        //   //-3.2 Zonas Fallan Constante.
-        //     if(bitRead(Zonas_LSB_Estados, P3ZA) && bitRead(ZonasF_LSB_Estados, P3ZA)){
-        //       Serial.println("SEC,ERR,3,A");
-        //     }
-        //     if(bitRead(Zonas_LSB_Estados, P3ZB) && bitRead(ZonasF_LSB_Estados, P3ZB)){
-        //       Serial.println("SEC,ERR,3,B");
-        //     }
-        //   //-3.3 Zonas OK
-        //     if(!bitRead(Zonas_LSB_Estados, P3ZA)){
-        //       Serial.println("SEC,BOK,3,A");
-        //     }
-        //     if(!bitRead(Zonas_LSB_Estados, P3ZB)){
-        //       Serial.println("SEC,BOK,3,B");
-        //     }        
-        // }
-      // Nodo 4.
-        // if(bitRead(Nodos_LSB_ACK, 4)){
-        //   if(bitRead(Zonas_LSB_Estados, P4ZA)){
-        //     Serial.println("SEC,NOK,4,A");
-        //   }
-        //   if(bitRead(Zonas_LSB_Estados, P4ZB)){
-        //     Serial.println("SEC,NOK,4,B");
-        //   }
-        //   if(!bitRead(Zonas_LSB_Estados, P4ZA)){
-        //     Serial.println("SEC,BOK,4,A");
-        //   }
-        //   if(!bitRead(Zonas_LSB_Estados, P4ZB)){
-        //     Serial.println("SEC,BOK,4,B");
-        //   }
-        // }
-    
     }
   //-4.4 Actualizar.  
     void actualizar(){
@@ -1547,15 +1437,13 @@ void loop(){
       //2. Estados de Entradas.
 
         if(localAddress<255){
-          bitWrite(nodo_local,1, Zona_A_ST);
+          bitWrite(nodo_local,1, Zona_B_ST);
           bitWrite(nodo_local,2, zona_1_err);
-          bitWrite(nodo_local,3, Zona_B_ST);
+          bitWrite(nodo_local,3, Zona_A_ST);
           bitWrite(nodo_local,4, zona_2_err);
           bitWrite(nodo_local,5, Fuente_in_ST);
           bitWrite(nodo_local,6, timer_nodo_ST);
-          codigo+=nodo_local;
-          codigo+=nodo_Status;
-          Serial.println(nodo_local, BIN);
+          nodo_Status=String(nodo_local,HEX);
         }
       //3. ESTADOS DE NODOS. 
         if(flag_F_PAQUETE){
@@ -1778,7 +1666,7 @@ void loop(){
       // read packet header bytes:
       incoming_recipient = LoRa.read();    // incoming_recipient address
       incoming_sender    = LoRa.read();    // incoming_sender address
-      // incoming_zonesLSB  = LoRa.read();    // incoming_function msg ID.
+      incoming_zonesLSB  = LoRa.read();    // incoming_function msg ID.
       // incoming_zonesMSB  = LoRa.read();    // incoming_function msg ID.
       // incoming_nodosLSB  = LoRa.read();    // incoming_function Nodos Reportados LSB.
       // incoming_nodosMSB  = LoRa.read();    // incoming_function Nodos Reportados MSB.
@@ -1834,7 +1722,7 @@ void loop(){
       LoRa.beginPacket();             // start packet
       LoRa.write(destination);        // add destination address
       LoRa.write(localAddress);       // add incoming_sender address
-      // LoRa.write(zonesLSB);           // add message ID
+      LoRa.write(zonesLSB);           // add message ID
       // LoRa.write(zonesMSB);           // add message ID
       // LoRa.write(nodosLSB);
       // LoRa.write(nodosMSB);
@@ -1875,7 +1763,9 @@ void loop(){
         Nodos_LSB_ACK=0;
         nodos_LSB_MERGE=0;
         nodo_Status="";
-        Serial.println(".");
+        Serial.println(nodo_local, BIN);
+        Serial.println(codigo);
+        
       }
 
       // DEBUG

@@ -16,7 +16,7 @@ class Node{
         void Ack(char functionCode);
         int GetAckNum();
         void Coming (char nodeCode);
-        void Update(uint Nodo_Source_1, int Nodo_Source_2);
+        void Update(byte Nodo_Source_1, int Nodo_Source_2);
         void Estado();
         
         int Zone_A_Num;

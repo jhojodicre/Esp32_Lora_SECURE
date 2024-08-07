@@ -40,9 +40,9 @@ void Node::Coming(char nodeCode){
 
 
 }
-void Node::Update(uint dato_actual_1, int dato_actual_2){
-    uint dato_recibido = dato_actual_1;
-    // bit 0=ZA                       
+void Node::Update(byte dato_actual_1, int dato_actual_2){
+    byte dato_recibido = dato_actual_1;
+    // bit 0=ZA
         if(bitRead(dato_recibido, 1)){
             Zone_A_ALR=true;
             Zone_A_ALR_str=ZONA_ACT;
