@@ -40,8 +40,8 @@ class Node{
         bool Zone_A_ALR;
         bool Zone_B_ALR;
 
-        String Zone_A_ALR_str;
-        String Zone_B_ALR_str;
+        String Zone_A_ST_str;
+        String Zone_B_ST_str;
         
         bool Timer_ON;
         String Timer_ON_str;

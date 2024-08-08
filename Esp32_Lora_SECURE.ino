@@ -154,6 +154,10 @@
       byte        nodo_local=0;   // Info del nodo al final del mensaje.
       String      nodo_Status;
       byte        Nodo_Current;
+
+
+
+
       byte        Zonas_MSB=0;
       byte        Zonas_LSB=0;
       byte        Zonas_LSB_Estados=0;
@@ -264,6 +268,7 @@
       byte        incoming_zonesMSB;     // incoming_function msg ID
       byte        incoming_nodosLSB;
       byte        incoming_nodosMSB;
+      byte        incoming_nodo_info;
       byte        incoming_zonaFLSB;
       byte        incoming_zonaFMSB;
       byte        incoming_nodoInfo;
@@ -387,12 +392,12 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0xFF;
+      localAddress    = 0x01;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
       Nodo_ultimo     = Nodos;
-      Zonas_Falla_Time= 5;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
+      Zonas_Falla_Time= 3;           // cuenta el Numero de veces que timer 1 se activa para dar zona falla constante.
       MODE            = MASTER;
       Nodo_Modo       = MASTER;
       Nodos_y_Master  = Nodos +1;    // Numero de Nodos + Master.
@@ -493,11 +498,11 @@ void loop(){
     while (flag_F_inicio){
       welcome();        // Comprobamos el Sistema minimo de Funcionamiento.
       led_Monitor(3);
+      temporizador_1.attach_ms(1000, ISR_temporizador_1);
+      beforeTime_1=millis();
+      flag_F_T1_run=true;
       if(flag_F_Master_Enable){
-        temporizador_1.attach_ms(1000, ISR_temporizador_1);
-        beforeTime_1=millis();
-        flag_F_T1_run=true;
-        nodo_proximo=Nodo_primero-1;
+        nodo_proximo=Nodo_primero-1;  
       }
       else{
         if(MODE==INDEPENDIENTE){
@@ -544,10 +549,8 @@ void loop(){
           }
         //NODE MODE.
           // RESPONDER si NO hay TOKEN.
-          if (flag_F_Node_Enable && !flag_F_token){
+          if (flag_F_Node_Enable && !flag_F_token && MODE==INDEPENDIENTE){
             b6();
-            // codigo="S1" + Fuente_in_str + temporizador_1_str;
-          
             flag_F_PAQUETE=false;
             flag_F_responder=true;
             timer_nodo_ST=true;
@@ -876,7 +879,7 @@ void loop(){
           if(flag_F_depurar){
             Serial.println("funion S N1");
           }
-          s1(incoming_zonesLSB,x2);
+          s1(incoming_nodo_info,x2);
         }
         // if (funtion_Mode=="S" && funtion_Number=="2"){
         //   if(flag_F_depurar){
@@ -1036,7 +1039,6 @@ void loop(){
         // 3. Zonas Leidas 1.
         zonesMSB=Zonas_MSB_Estados;
         // zonesLSB=Zonas_LSB_Estados;
-        zonesLSB=nodo_local;
         // 4. Nodos Leidas.
         nodosLSB=nodos_LSB_MERGE;
         // 5. Longitud de Bytes de la Cadena incoming_function
@@ -1222,9 +1224,9 @@ void loop(){
     void reviso(){
       if(localAddress==255) return;
       // 1. Pulsadores A y B Lectura.
-        Zona_A_ACK=digitalRead(PB_ZA_in);        // pulsador A. PB_ZA_in
-        Zona_B_ACK=digitalRead(PB_ZB_in);        // pulsador B.
-        Zona_AB_ACK=digitalRead(PB_ZC_in);    // pulsador C, Pulsador por defecto PRG.
+        Zona_A_ACK=digitalRead(PB_ZA_in);       // pulsador A. PB_ZA_in
+        Zona_B_ACK=digitalRead(PB_ZB_in);       // pulsador B.
+        Zona_AB_ACK=digitalRead(PB_ZC_in);      // pulsador C. Pulsador por defecto PRG.
       // 2. Zona A y Zona B Lectura.
         Zona_A_ax=digitalRead(Zona_A_in);
         Zona_B_ax=digitalRead(Zona_B_in);
@@ -1369,28 +1371,22 @@ void loop(){
   //-4.3 Sever Update.  
     void serverUpdate(){
       flag_F_updateServer=false;
-      if(flag_F_depurar){
-        Serial.print("Nodo: ");
-        Serial.print(incoming_sender);
-        Serial.print(" ");
-        Serial.println(incoming_function);
-      }
       switch(incoming_sender){
         case 1:
           Node1.Estado();
-          Serial.println(incoming_zonesLSB, BIN);
+          Serial.println(incoming_nodo_info, BIN);
           break;
         case 2:
           Node2.Estado();
-          Serial.println(incoming_zonesLSB, BIN);
+          Serial.println(incoming_nodo_info, BIN);
           break;
         case 3:
           Node3.Estado();
-          Serial.println(incoming_zonesLSB, BIN);
+          Serial.println(incoming_nodo_info, BIN);
           break;
         case 4:
           Node4.Estado();
-          Serial.println(incoming_zonesLSB, BIN);
+          Serial.println(incoming_nodo_info, BIN);
           break;
         case 5:
           Node5.Estado();
@@ -1435,11 +1431,10 @@ void loop(){
           Zonas_LSB_str=256;        // CON ESTA VARIABLE ACTIVO EL BIT 9 PARA PODER MOSTRAR LAS ZONAS ACTIVAS
           Zonas_LSB_str |=zonesLSB;
       //2. Estados de Entradas.
-
         if(localAddress<255){
-          bitWrite(nodo_local,1, Zona_B_ST);
+          bitWrite(nodo_local,1, Zona_A_ST);
           bitWrite(nodo_local,2, zona_1_err);
-          bitWrite(nodo_local,3, Zona_A_ST);
+          bitWrite(nodo_local,3, Zona_B_ST);
           bitWrite(nodo_local,4, zona_2_err);
           bitWrite(nodo_local,5, Fuente_in_ST);
           bitWrite(nodo_local,6, timer_nodo_ST);
@@ -1621,7 +1616,10 @@ void loop(){
             ++ zona_1;
             if(zona_1==Zonas_Falla_Time)
             {
+
+              zona_1_err=true;
               zona_1=0;
+
               zona_1_err=true;
             }
           }
@@ -1666,12 +1664,13 @@ void loop(){
       // read packet header bytes:
       incoming_recipient = LoRa.read();    // incoming_recipient address
       incoming_sender    = LoRa.read();    // incoming_sender address
-      incoming_zonesLSB  = LoRa.read();    // incoming_function msg ID.
+      // incoming_zonesLSB  = LoRa.read();    // incoming_function msg ID.
       // incoming_zonesMSB  = LoRa.read();    // incoming_function msg ID.
       // incoming_nodosLSB  = LoRa.read();    // incoming_function Nodos Reportados LSB.
       // incoming_nodosMSB  = LoRa.read();    // incoming_function Nodos Reportados MSB.
       // incoming_zonaFLSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
       // incoming_zonaFMSB  = LoRa.read();    // incoming_function Informacion del Nodo Local.
+      incoming_nodo_info = LoRa.read();
       incoming_length    = LoRa.read();    // incoming_function msg length
       incoming_function  = "";
       while (LoRa.available()){
@@ -1722,12 +1721,14 @@ void loop(){
       LoRa.beginPacket();             // start packet
       LoRa.write(destination);        // add destination address
       LoRa.write(localAddress);       // add incoming_sender address
-      LoRa.write(zonesLSB);           // add message ID
+      // LoRa.write(zonesLSB);           // add message ID
       // LoRa.write(zonesMSB);           // add message ID
       // LoRa.write(nodosLSB);
       // LoRa.write(nodosMSB);
       // LoRa.write(zonaFLSB);
       // LoRa.write(zonaFMSB);
+      
+      LoRa.write(nodo_local);
       LoRa.write(outgoing.length());  // add payload length
       LoRa.print(outgoing);           // add payload
       LoRa.endPacket();               // finish packet and send it
