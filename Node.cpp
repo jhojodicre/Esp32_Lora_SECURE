@@ -53,50 +53,50 @@ void Node::Update(byte dato_actual_1, int dato_actual_2){
             Zone_A_ST_str=ZONA_DES;
         }
     // bit 1=ZA FALLA
-    if(bitRead(dato_recibido, 2)){
-        Zone_A_FAL=true;
-        Zone_A_ST_str=ZONA_FA;
-    }
-    if(!bitRead(dato_recibido, 2)){
-        Zone_A_FAL=false;
-        Zone_A_ST_str=ZONA_DES;
-    }
+        if(bitRead(dato_recibido, 2)){
+            Zone_A_FAL=true;
+            Zone_A_ST_str=ZONA_FA;
+        }
+        if(!bitRead(dato_recibido, 2)){
+            Zone_A_FAL=false;
+            Zone_A_ST_str=ZONA_DES;
+        }
     // bit 2=ZB
-    if(bitRead(dato_recibido, 3)){
-        Zone_B_ALR=true;
-        Zone_B_ST_str=ZONA_ACT;
-    }
-    if(!bitRead(dato_recibido, 3)){
-        Zone_B_ALR=false;
-        Zone_B_ST_str=ZONA_DES;
-    }
+        if(bitRead(dato_recibido, 3)){
+            Zone_B_ALR=true;
+            Zone_B_ST_str=ZONA_ACT;
+        }
+        if(!bitRead(dato_recibido, 3)){
+            Zone_B_ALR=false;
+            Zone_B_ST_str=ZONA_DES;
+        }
     // bit 3=ZB FALLA
-    if(bitRead(dato_recibido, 4)){
-        Zone_B_FAL=true;
-        Zone_B_ST_str=ZONA_FA;
-    }
-    if(!bitRead(dato_recibido, 4)){
-        Zone_B_FAL=false;
-        Zone_B_FAL_str=ZONA_DES;
-    }
+        if(bitRead(dato_recibido, 4)){
+            Zone_B_FAL=true;
+            Zone_B_ST_str=ZONA_FA;
+        }
+        if(!bitRead(dato_recibido, 4)){
+            Zone_B_FAL=false;
+            Zone_B_FAL_str=ZONA_DES;
+        }
     // bit 4=FUENTE
-    if(bitRead(dato_recibido, 5)){
-        Fuente=true;
-        Fuente_str=FUENTE_OK;
-    }
-    if(!bitRead(dato_recibido, 5)){
-        Fuente=false;
-        Fuente_str=BATERIA_OK;
-    }
+        if(bitRead(dato_recibido, 5)){
+            Fuente=true;
+            Fuente_str=FUENTE_OK;
+        }
+        if(!bitRead(dato_recibido, 5)){
+            Fuente=false;
+            Fuente_str=BATERIA_OK;
+        }
     // bit 5=timer
-    if(bitRead(dato_recibido, 6)){
-        Timer_ON=true;
-        Timer_ON_str=Timer_ciclo_k;
-    }
-    if(!bitRead(dato_recibido, 6)){
-        Timer_ON=false;
-        Timer_ON_str=Timer_token_k;
-    }
+        if(bitRead(dato_recibido, 6)){
+            Timer_ON=true;
+            Timer_ON_str=Timer_ciclo_k;
+        }
+        if(!bitRead(dato_recibido, 6)){
+            Timer_ON=false;
+            Timer_ON_str=Timer_token_k;
+        }
 }
 void Node::Estado(){
     Serial.println("SEC,"+Zone_A_ST_str+","+Node_Number+",A");

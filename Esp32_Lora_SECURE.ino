@@ -380,8 +380,11 @@ void setup(){
     //1.2 Configuracion de Entradas
       pinMode(Zona_A_in, INPUT);
       pinMode(Zona_B_in, INPUT);
+
       pinMode(PB_ZA_in, INPUT);
       pinMode(PB_ZB_in, INPUT);
+      pinMode(PB_ZC_in, INPUT);
+
       pinMode(Fuente_in, INPUT);
 
       // pinMode(in_12, INPUT);
@@ -392,8 +395,8 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0x01;
-      Nodos           = 4;
+      localAddress    = 0xFF;
+      Nodos           = 8;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
       Nodo_ultimo     = Nodos;
@@ -559,6 +562,7 @@ void loop(){
           if (flag_F_token){
             flag_F_token=false;
           }
+          flag_ISR_temporizador_1=false;
       }
     //-4.3 F- Timer 2.
       if(flag_ISR_temporizador_2){
@@ -1393,6 +1397,7 @@ void loop(){
           break;
         case 6:
           Node6.Estado();
+
           break;
         case 7:
           Node8.Estado();        
@@ -1614,14 +1619,14 @@ void loop(){
         //-4.1 FALLA ZONA_A
           if(!Zona_A_ax && !zona_1_err){
             ++ zona_1;
-            if(zona_1==Zonas_Falla_Time)
-            {
-
+            if(zona_1==Zonas_Falla_Time){
               zona_1_err=true;
               zona_1=0;
-
-              zona_1_err=true;
             }
+          }
+          if(zona_1_err==true){
+            bitSet(Zonas_Fallan, Zona_A);
+            Zona_A_F_str='X';
           }
         //-4.2 FALLA ZONA_B.
           if(!Zona_B_ax && !zona_2_err){
@@ -1629,13 +1634,10 @@ void loop(){
              if(zona_2==Zonas_Falla_Time){
                zona_2=0;
                zona_2_err=true;
+               Serial.println(zona_2_err);
              }
           }
-          if(zona_1_err){
-            bitSet(Zonas_Fallan, Zona_A);
-            Zona_A_F_str='X';
-          }
-          if(zona_2_err){
+          if(zona_2_err==true){
             bitSet(Zonas_Fallan, Zona_B);
             Zona_B_F_str='X';
           }
@@ -1644,7 +1646,7 @@ void loop(){
           if(Zona_A_ax && zona_1>0) zona_1=0;
           if(Zona_B_ax && zona_2>0) zona_2=0;
       //5 Flag clear Timer 1 and 2.
-        flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
+        // flag_ISR_temporizador_1=false;    // Cuando el master reconoce todos los Nodos el Flag del T1 no se resetea en RFM95 ENVIAR, SINO AQUI.
       //6 Mensajes recibidos
         // Node1.GetAckNum();
     }

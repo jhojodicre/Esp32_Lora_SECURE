@@ -54,7 +54,7 @@ class Node{
         String  ZONA_DES ="BOK";
 
         String  ZONA_OK   ="BOK";
-        String  ZONA_FA  ="NOK";
+        String  ZONA_FA   ="ERR";
         String  FUENTE_OK = "1";
         String  BATERIA_OK= "0";
 
