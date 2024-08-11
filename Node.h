@@ -42,6 +42,8 @@ class Node{
 
         String Zone_A_ST_str;
         String Zone_B_ST_str;
+
+        String Node_Source_Mode_str;
         
         bool Timer_ON;
         String Timer_ON_str;
@@ -49,13 +51,14 @@ class Node{
 
         #define  Timer_token_k  "2"
         #define  Timer_ciclo_k  "1"
-
+        #define  NODO_PERDIDO   "NOC"
+        
         String  ZONA_ACT ="NOK";
         String  ZONA_DES ="BOK";
+        String  ZONA_FA  ="ERR";
 
-        String  ZONA_OK   ="BOK";
-        String  ZONA_FA   ="ERR";
-        String  FUENTE_OK = "1";
+
+        String  FUENTE_OK = "2";
         String  BATERIA_OK= "0";
 
 

@@ -524,11 +524,11 @@ void loop(){
       decodificar_solicitud();
     }
   //3. Ejecutar Funcion
-      if(flag_F_codified_funtion){
-        ejecutar_solicitud();
-        flag_F_codified_funtion=false;
-        inputString="";
-      }
+    if(flag_F_codified_funtion){
+      ejecutar_solicitud();
+      flag_F_codified_funtion=false;
+      inputString="";
+    }
   //4. Atender Las fucniones activadas desde ISR FLAGS.
     //-4.0 Bandera de Prueba.
       if(flag_ISR_prueba){
@@ -545,6 +545,7 @@ void loop(){
         //MASTER MODE.
           // RESPONDER.
           if(flag_F_Master_Enable && flag_F_Master_Esperando){
+            Nodo_CAIDO();
             Nodo_REQUEST();
             b7();
             flag_F_responder=true;
@@ -590,7 +591,6 @@ void loop(){
         b6();
         flag_F_responder=true;
       }
-
     //-4.6 F- Server Update.
       if(flag_F_updateServer){
         serverUpdate();
@@ -600,6 +600,7 @@ void loop(){
         flag_F_PAQUETE=false;
         secuencia();              // Si recibo un paquete, voy a secuencia para preparar el mensaje que respondere dependiendo de lo que haya recibido
       }
+
   //5. RFM95 Funciones.
     //-5.1 RFM95 RESPONDER Si?
       if(flag_F_responder){
@@ -892,8 +893,7 @@ void loop(){
         //   s2(x1);
         // }
   }
-
-//3. Funciones Seleccionadas para Ejecutar.
+//3. Funciones para Ejecutar.
   //-3.1 Funciones tipo A.
     void a1_Nodo_Destellos (int repeticiones, int tiempo){
       // FUNCION PROBADA CORRECTAMENTE
@@ -1370,7 +1370,6 @@ void loop(){
             flag_F_Master_Esperando=false;       // DESPUES QUE EL MAESTRO RECIBE EL MENSAJE DEL NODO ACTUALIYA LA BANDERA mMASTER ESPERA A FALSE
             // flag_F_T2_run=true;
           }
-
     }
   //-4.3 Sever Update.  
     void serverUpdate(){
@@ -1378,26 +1377,25 @@ void loop(){
       switch(incoming_sender){
         case 1:
           Node1.Estado();
-          Serial.println(incoming_nodo_info, BIN);
+          // Serial.println(incoming_nodo_info, BIN);
           break;
         case 2:
           Node2.Estado();
-          Serial.println(incoming_nodo_info, BIN);
+          // Serial.println(incoming_nodo_info, BIN);
           break;
         case 3:
           Node3.Estado();
-          Serial.println(incoming_nodo_info, BIN);
+          // Serial.println(incoming_nodo_info, BIN);
           break;
         case 4:
           Node4.Estado();
-          Serial.println(incoming_nodo_info, BIN);
+          // Serial.println(incoming_nodo_info, BIN);
           break;
         case 5:
           Node5.Estado();
           break;
         case 6:
           Node6.Estado();
-
           break;
         case 7:
           Node8.Estado();        
@@ -1437,12 +1435,14 @@ void loop(){
           Zonas_LSB_str |=zonesLSB;
       //2. Estados de Entradas.
         if(localAddress<255){
+          // bitWrite(nodo_local,0, );
           bitWrite(nodo_local,1, Zona_A_ST);
           bitWrite(nodo_local,2, zona_1_err);
           bitWrite(nodo_local,3, Zona_B_ST);
           bitWrite(nodo_local,4, zona_2_err);
           bitWrite(nodo_local,5, Fuente_in_ST);
           bitWrite(nodo_local,6, timer_nodo_ST);
+          // bitWrite(nodo_local,7, );
           nodo_Status=String(nodo_local,HEX);
         }
       //3. ESTADOS DE NODOS. 
@@ -1657,6 +1657,49 @@ void loop(){
       }
       if(nodo_proximo<=Nodo_ultimo) {
         ++ nodo_proximo;
+      }
+    }
+  //-4.7 NODO CAIDO.
+   void Nodo_CAIDO(){
+      switch(nodo_proximo){
+        case 1:
+          Node1.Update(128, 0);
+          Node1.Estado();
+          break;
+        case 2:
+          Node2.Update(128, 0);
+          Node2.Estado();
+          break;
+        case 3:
+          Node3.Update(128, 0);
+          Node3.Estado();
+          break;
+        case 4:
+          Node4.Update(128, 0);
+          Node4.Estado();
+          break;
+        case 5:
+          Node5.Update(128, 0);
+          Node5.Estado();
+          break;
+        case 6:
+          Node6.Update(128, 0);
+          Node6.Estado();
+          break;
+        case 7:
+          Node7.Update(128, 0);
+          Node7.Estado();
+          break;
+        case 8:
+          Node8.Update(128, 0);
+          Node8.Estado();
+          break;
+        case 9:
+          Node9.Update(128, 0);
+          Node9.Estado();
+          break;
+        default:
+          break;
       }
     }
 //5. Funciones de Dispositivos Externos.
