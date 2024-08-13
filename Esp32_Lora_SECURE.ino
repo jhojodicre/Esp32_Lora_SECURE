@@ -396,7 +396,7 @@ void setup(){
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
       localAddress    = 0xFF;
-      Nodos           = 8;
+      Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
       Nodo_ultimo     = Nodos;

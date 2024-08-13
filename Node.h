@@ -58,8 +58,8 @@ class Node{
         String  ZONA_FA  ="ERR";
 
 
-        String  FUENTE_OK = "2";
-        String  BATERIA_OK= "0";
+        String  FUENTE_EN = "0";
+        String  BATERIA_EN= "1";
 
 
         bool Zone_A_OK;
@@ -69,6 +69,7 @@ class Node{
         char Funcion_Num;
 
         bool Fuente;
+        bool Batery;
         String Fuente_str;
         int Timero;
 

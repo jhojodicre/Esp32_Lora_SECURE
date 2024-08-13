@@ -82,14 +82,16 @@ void Node::Update(byte dato_actual_1, int dato_actual_2){
         }
     // bit 5=NODE SOURCE
         if(bitRead(dato_recibido, 5)){
-            Fuente=true;
-            Node_Source_Mode_str=FUENTE_OK;
-            Zone_A_ST_str="BAT";
-            Zone_B_ST_str="BAT";
+            Fuente=false;
+            Batery=true;
+            Node_Source_Mode_str=BATERIA_EN;
+            // Zone_A_ST_str="BAT";
+            // Zone_B_ST_str="BAT";
         }
         if(!bitRead(dato_recibido, 5)){
-            Fuente=false;
-            Node_Source_Mode_str=BATERIA_OK;
+            Batery=false;
+            Fuente=true;
+            Node_Source_Mode_str=FUENTE_EN;
         }
     // bit 6=TIMER
         if(bitRead(dato_recibido, 6)){
