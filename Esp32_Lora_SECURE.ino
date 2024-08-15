@@ -577,6 +577,7 @@ void loop(){
           b7();
           flag_F_Master_Esperando=true; // Master indica que queda esperando un mensaje
         }
+        flag_ISR_temporizador_1=false;
         flag_F_tokenTime=true;
         flag_F_responder=true;
         timer_nodo_ST=false;
@@ -1181,7 +1182,7 @@ void loop(){
   //-3.4 Funciones tipo S.
     void s1(byte data_in_1, int data_in_2){
       byte Dato_Nuevo_1 = data_in_1;   // Estado del nodo
-      int Dato_Nuevo_2 = data_in_2;   
+      int Dato_Nuevo_2 = data_in_2;
       switch(incoming_sender){
         case 1:
           Node1.Update(Dato_Nuevo_1, Dato_Nuevo_2);

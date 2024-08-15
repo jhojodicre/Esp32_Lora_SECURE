@@ -42,73 +42,77 @@ void Node::Coming(char nodeCode){
 }
 void Node::Update(byte dato_actual_1, int dato_actual_2){
     byte dato_recibido = dato_actual_1;
-   
-    // bit 1=ZA
-        //
-        if(bitRead(dato_recibido, 1)){
-            Zone_A_ALR=true;
-            Zone_A_ST_str=ZONA_ACT;
+    // bit 0=ZX
+        if(bitRead(dato_recibido,0))
+        {
+            // Zone_A_ALR=true;
+            // Zone_A_ST_str=ZONA_ACT;
         }
-        if(!bitRead(dato_recibido, 1)){
+        else{
+            // Zone_A_ALR=false;
+            // Zone_A_ST_str=ZONA_DES;
+        }
+    // ZA 
+        // FALLA
+            if(bitRead(dato_recibido, 1) && bitRead(dato_recibido, 2)){
+                Zone_A_FAL=true;
+                Zone_A_ST_str=ZONA_FA;
+            }
+        // ACTIVADA
+            if(bitRead(dato_recibido,1)&& !bitRead(dato_recibido, 2))
+            {
+                Zone_A_ALR = true;
+                Zone_A_ST_str = ZONA_ACT;
+            }
+        // DESACTIVADA
+        if(!bitRead(dato_recibido,1)&& !bitRead(dato_recibido, 2))
+        {
             Zone_A_ALR=false;
-            Zone_A_ST_str=ZONA_DES;
+            Zone_A_ST_str = ZONA_DES;
         }
-    // bit 2=ZA FALLA
-        if(bitRead(dato_recibido, 2)){
-            Zone_A_FAL=true;
-            Zone_A_ST_str=ZONA_FA;
-        }
-        if(!bitRead(dato_recibido, 2)){
-            Zone_A_FAL=false;
-            Zone_A_ST_str=ZONA_DES;
-        }
-    // bit 3=ZB
-        if(bitRead(dato_recibido, 3)){
-            Zone_B_ALR=true;
-            Zone_B_ST_str=ZONA_ACT;
-        }
-        if(!bitRead(dato_recibido, 3)){
+    // ZB 
+        // FALLA
+            if(bitRead(dato_recibido,3)&& bitRead(dato_recibido, 4)){
+                Zone_B_FAL=true;
+                Zone_B_ST_str=ZONA_FA;
+            }
+
+        // ACTIVADA
+            if(bitRead(dato_recibido, 3)&& !bitRead(dato_recibido, 4)){
+                Zone_B_ALR=true;
+                Zone_B_ST_str=ZONA_ACT;
+            }
+        // DESACTIVADA
+        if(!bitRead(dato_recibido, 3)&& !bitRead(dato_recibido, 4)){
             Zone_B_ALR=false;
             Zone_B_ST_str=ZONA_DES;
-        }
-    // bit 4=ZB FALLA
-        if(bitRead(dato_recibido, 4)){
-            Zone_B_FAL=true;
-            Zone_B_ST_str=ZONA_FA;
-        }
-        if(!bitRead(dato_recibido, 4)){
-            Zone_B_FAL=false;
-            Zone_B_FAL_str=ZONA_DES;
         }
     // bit 5=NODE SOURCE
         if(bitRead(dato_recibido, 5)){
             Fuente=false;
             Batery=true;
-            Node_Source_Mode_str=BATERIA_EN;
-            // Zone_A_ST_str="BAT";
-            // Zone_B_ST_str="BAT";
+            Node_Source_Mode_str=FUENTE_EN;
         }
-        if(!bitRead(dato_recibido, 5)){
+        else{
             Batery=false;
             Fuente=true;
-            Node_Source_Mode_str=FUENTE_EN;
+            Node_Source_Mode_str=BATERIA_EN;
         }
     // bit 6=TIMER
         if(bitRead(dato_recibido, 6)){
             Timer_ON=true;
             Timer_ON_str=Timer_ciclo_k;
         }
-        if(!bitRead(dato_recibido, 6)){
+        else{
             Timer_ON=false;
             Timer_ON_str=Timer_token_k;
         }
     // bit 7=NODO SIN COMUNICACION
-        //
         if(bitRead(dato_recibido, 7)){
             Zone_A_ST_str=NODO_PERDIDO;
             Zone_B_ST_str=NODO_PERDIDO;
         }
-        // if(!bitRead(dato_recibido, 7)){
+        // else{
         //     Zone_A_ALR=false;
         //     Zone_A_ST_str="";
         // }
