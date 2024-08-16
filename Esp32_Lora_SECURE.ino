@@ -3,6 +3,7 @@
     #include <Ticker.h>
     #include <SPI.h>
     #include <heltec.h>
+    #include <EEPROM.h>
     #include "Node.h"
     // #include "images.h"
     
@@ -52,6 +53,8 @@
     #define INDEPENDIENTE 1
     #define MASTER        2
   //-2.5 timer
+  //-2.6 EEPROM
+    #define EEPROM_SIZE 1
 
 //3. Variables Globales.
   //-3.1 Variables Interrupciones
@@ -63,6 +66,7 @@
     volatile bool flag_ISR_temporizador_0=false;
     volatile bool flag_ISR_LORA=false;
 
+    bool          EEPROM_ADDRESS_EN=false;
     String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
@@ -154,7 +158,7 @@
       byte        nodo_local=0;   // Info del nodo al final del mensaje.
       String      nodo_Status;
       byte        Nodo_Current;
-
+      byte       Node_local_Address;
 
 
 
@@ -288,7 +292,8 @@
       byte        nodoInfo;             // informacion particular que envia el nodo
       String      outgoing;             // outgoing message
       byte        msgNumber;            // en modo continuo este numero incrementa automaticamente.          // interval between sends.      
-    
+    // EEPROM
+      int         Node_eeprom_address = 0;
     // Otras.  
       String      codigo="";
       String      info_1="";
@@ -395,7 +400,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0xFF;
+      Node_local_Address    = 0xFF;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -475,7 +480,14 @@ void setup(){
       // attachInterrupt (digitalPinToInterrupt (PB_ZB_in), ISR_4, FALLING);      // attach interrupt handler for D2
 
       //interrupts ();
-
+    //-3.3 EEPROM
+      EEPROM.begin(EEPROM_SIZE);
+      if(EEPROM_ADDRESS_EN){
+        localAddress=Node_eeprom_address;
+      }
+      else{
+        localAddress=Node_local_Address;
+      }
   //4. Prueba de Sitema Minimo Configurado.
     if(flag_F_depurar){
       Serial.println("Sistema Minimo Configurado");
