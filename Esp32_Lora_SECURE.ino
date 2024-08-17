@@ -54,7 +54,7 @@
     #define MASTER        2
   //-2.5 timer
   //-2.6 EEPROM
-    #define EEPROM_SIZE 1
+    #define EEPROM_SIZE 2
 
 //3. Variables Globales.
   //-3.1 Variables Interrupciones
@@ -66,7 +66,7 @@
     volatile bool flag_ISR_temporizador_0=false;
     volatile bool flag_ISR_LORA=false;
 
-    bool          EEPROM_ADDRESS_EN=false;
+    int           EEPROM_ADDRESS_EN=1;
     String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
@@ -158,7 +158,7 @@
       byte        nodo_local=0;   // Info del nodo al final del mensaje.
       String      nodo_Status;
       byte        Nodo_Current;
-      byte       Node_local_Address;
+      byte        Node_local_Address;
 
 
 
@@ -400,7 +400,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      Node_local_Address    = 0xFF;
+      Node_local_Address    = 0x04;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -482,8 +482,8 @@ void setup(){
       //interrupts ();
     //-3.3 EEPROM
       EEPROM.begin(EEPROM_SIZE);
-      if(EEPROM_ADDRESS_EN){
-        localAddress=Node_eeprom_address;
+      if(EEPROM.read(EEPROM_ADDRESS_EN)==10){
+        localAddress=EEPROM.read(Node_eeprom_address);
       }
       else{
         localAddress=Node_local_Address;
@@ -931,7 +931,11 @@ void loop(){
       if(flag_F_depurar){
         Serial.println("Ejecutando F3.. \n");
       }
-      localAddress    = paramatro_1;
+      EEPROM.write(Node_eeprom_address,paramatro_1);
+      EEPROM.write(EEPROM_ADDRESS_EN,10);
+      // EEPROM.write(Node_eeprom_address,paramatro_1);
+      // EEPROM.write();
+      localAddress    = EEPROM.read(Node_eeprom_address);
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
