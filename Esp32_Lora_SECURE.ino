@@ -66,7 +66,7 @@
     volatile bool flag_ISR_temporizador_0=false;
     volatile bool flag_ISR_LORA=false;
 
-    int           EEPROM_ADDRESS_EN=1;
+    
     String        inputString;           // Buffer recepcion Serial.
     String        funtion_Mode;          // Tipo de funcion para ejecutar.
     String        funtion_Number;        // Numero de funcion a EJECUTAR.
@@ -293,7 +293,8 @@
       String      outgoing;             // outgoing message
       byte        msgNumber;            // en modo continuo este numero incrementa automaticamente.          // interval between sends.      
     // EEPROM
-      int         Node_eeprom_address = 0;
+      byte          Node_eeprom_address = 0;
+      byte          EEPROM_ADDRESS_EN   = 1;
     // Otras.  
       String      codigo="";
       String      info_1="";
@@ -933,6 +934,7 @@ void loop(){
       }
       EEPROM.write(Node_eeprom_address,paramatro_1);
       EEPROM.write(EEPROM_ADDRESS_EN,10);
+      EEPROM.commit();
       // EEPROM.write(Node_eeprom_address,paramatro_1);
       // EEPROM.write();
       localAddress    = EEPROM.read(Node_eeprom_address);
@@ -1840,3 +1842,5 @@ void loop(){
 
 
 //https://resource.heltec.cn/download/package_heltec_esp32_index.json
+// TODO:
+//REALIZAR UN SISTEMA DE CONTROL DE VERSIONES TANTO DE HARDWARE COMO DE SOFTWARE
