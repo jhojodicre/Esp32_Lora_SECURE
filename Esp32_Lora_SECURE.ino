@@ -252,6 +252,8 @@
       long        tokenLast;
       long        totalTime;
       long        waitTime   = 0;
+      long        startTime;
+
       uint32_t    remainT1;
       uint32_t    remainT2;
       int         fastTime    =   1;
@@ -281,7 +283,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress; // address of this device           a3
+      byte        localAddress=0; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -401,7 +403,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      Node_local_Address    = 0xFF;
+      localAddress    = 0x02;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -437,25 +439,31 @@ void setup(){
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
+      EEPROM.write(Node_eeprom_address,localAddress);
+      EEPROM.commit();
+      // EEPROM.write(Node_eeprom_address,paramatro_1);
+      // EEPROM.write();
+      localAddress    = EEPROM.read(Node_eeprom_address);
       // BANDERAS
-
+        flag_F_depurar    = false;
     //-2.3 Timer Answer.
-      tokenTime       = 700;
+      masterTime      = 1200;         // every masterTime the Master Request to the next Node if the current request wasn't answer.
+      tokenTime       = 900;         // THE MASTER request every 900 miliscond, le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000 millsecond.
+      startTime       = 2000;         // Its is the time that the Master request the first Time.
       baseTime        = 400;
+      fastTime        = 10;
       updateTime      = 400;
       wakeUpTime      = tokenTime*localAddress;
       cycleTime       = tokenTime*(Nodos+1);
-      masterTime      = 2000;          // Cada 100 milisegundo el maetro le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000.
       firstTime       = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
       wakeUpTime      = 30.0;         // Este temporizador es para rresponder despues que el nodo despierta despues de mucho tiempo sin encender y es el unico que esta activo.
       chismeTime      = (10*Nodo_actual)+100;
-      fastTime        = 10;
       // Timer 3 Responde despues de Reiniciar sin Recibir respuesta.
       if(localAddress<255){
-        temporizador_3.once(wakeUpTime, ISR_temporizador_3);
+        // temporizador_3.once(wakeUpTime, ISR_temporizador_3);
       }
       if(flag_F_Master_Enable){
-        tokenTime       = 100;
+        // tokenTime       = 100;
       }
       
     //-2.4 Mascara de Zonas.
@@ -485,9 +493,11 @@ void setup(){
       EEPROM.begin(EEPROM_SIZE);
       if(EEPROM.read(EEPROM_ADDRESS_EN)==10){
         localAddress=EEPROM.read(Node_eeprom_address);
-      }
+        Serial.println("eeprom");
+      } 
       else{
         localAddress=Node_local_Address;
+        Serial.println("nO eeprom");
       }
   //4. Prueba de Sitema Minimo Configurado.
     if(flag_F_depurar){
@@ -510,11 +520,11 @@ void setup(){
   
 }
 void loop(){
-  //1. Bienvenida Funcion
+  //1. Sistema Iniciando
     while (flag_F_inicio){
       welcome();        // Comprobamos el Sistema minimo de Funcionamiento.
       led_Monitor(3);
-      temporizador_1.attach_ms(1000, ISR_temporizador_1);
+      temporizador_1.attach_ms(startTime, ISR_temporizador_1);
       beforeTime_1=millis();
       flag_F_T1_run=true;
       if(flag_F_Master_Enable){
@@ -952,6 +962,23 @@ void loop(){
         // temporizador_1.detach();
         // temporizador_2.detach();
         // temporizador_3.detach();
+      }
+      if(localAddress==255){
+        Nodo_Name="MASTER:";
+        flag_F_Master_Enable=true;
+        flag_F_Node_Enable=false;
+      }
+      else{
+        Nodo_Name="NODO:";
+        flag_F_Master_Enable=false;
+        flag_F_Node_Enable=true;
+      }
+      if(localAddress==Nodo_primero){
+        Nodo_anterior=Nodo_ultimo;
+      }
+      if(localAddress==Nodo_ultimo){
+        flag_F_Nodo_Ultimo=true;
+        Nodo_siguiente=Nodo_primero;
       }
       Serial.print("Address Local: ");
       Serial.println(localAddress);
