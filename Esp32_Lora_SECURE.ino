@@ -265,7 +265,7 @@
     // Eventos
       
   //-3.5 Variables RFM95.
-    // Variables para Recibir.
+    // Variables para RecibiA71r.
       byte        incoming_sender;               // incoming_sender address
       int         incoming_recipient;            // incoming_recipient address      
       byte        incoming_zonesLSB;     // incoming_function msg ID
@@ -281,7 +281,7 @@
 
     // Variable para Enviar.
       byte        destination; // destination to send to  0xFF;         a4      
-      byte        localAddress  = 0x06; // address of this device           a3
+      byte        localAddress; // address of this device           a3
       byte        zonesLSB;
       byte        zonesMSB;
 
@@ -401,7 +401,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      Node_local_Address    = 0x04;
+      Node_local_Address    = 0xFF;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -563,6 +563,9 @@ void loop(){
             b7();
             flag_F_responder=true;
             flag_F_Master_Esperando=true; // Master indica que queda esperando un mensaje
+            if(flag_F_depurar){
+              Serial.println("f.t1-EN");
+            }
           }
         //NODE MODE.
           // RESPONDER si NO hay TOKEN.
@@ -1676,6 +1679,9 @@ void loop(){
       }
       if(nodo_proximo<=Nodo_ultimo) {
         ++ nodo_proximo;
+      }
+      if(flag_F_depurar){
+        Serial.println("Node Next:"+nodo_proximo);
       }
     }
   //-4.7 NODO CAIDO.
