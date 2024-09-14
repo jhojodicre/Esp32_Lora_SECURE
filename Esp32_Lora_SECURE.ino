@@ -403,7 +403,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0x04;
+      localAddress    = 0xFF;
       Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -448,7 +448,7 @@ void setup(){
         flag_F_depurar    = false;
     //-2.3 Timer Answer.
       masterTime      = 1200;         // every masterTime the Master Request to the next Node if the current request wasn't answer.
-      tokenTime       = 900;         // THE MASTER request every 900 miliscond, le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000 millsecond.
+      tokenTime       = 1000;         // THE MASTER request every 900 miliscond, le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000 millsecond.
       startTime       = 2000;         // Its is the time that the Master request the first Time.
       baseTime        = 400;
       fastTime        = 10;
