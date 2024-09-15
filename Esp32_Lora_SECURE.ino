@@ -136,7 +136,7 @@
       String      Nodo_Name;
       byte        nodos_LSB_MERGE;           // variable para igualar el dato de los nodos reportados
       byte        nodos_MSB_MERGE;
-      int         nodoCount;                  // Numero de veces que recibe el mensaje del Nodo
+      int         nodoCount;                  // Numero de veces que recibe el mensaje del Nodo en Modo Continuo
       bool        flag_ST_nodo1;
       int         nodo; // provicional para quitar el error
       byte        nodo1=0;
@@ -404,7 +404,7 @@ void setup(){
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
       localAddress    = 0xFF;
-      Nodos           = 4;
+      Nodos           = 2;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
       Nodo_ultimo     = Nodos;
@@ -567,7 +567,7 @@ void loop(){
         analizar();
         //MASTER MODE.
           // RESPONDER.
-          if(flag_F_Master_Enable && flag_F_Master_Esperando){
+          if(flag_F_Master_Enable && flag_F_Master_Esperando && !flag_F_modo_Continuo){
             Nodo_CAIDO();
             Nodo_REQUEST();
             b7();
@@ -580,7 +580,12 @@ void loop(){
         //NODE MODE.
           // RESPONDER si NO hay TOKEN.
           if (flag_F_Node_Enable && !flag_F_token && MODE==INDEPENDIENTE){
-            b6();
+            // b6();
+            flag_F_PAQUETE=false;
+            flag_F_responder=true;
+            timer_nodo_ST=true;
+        //CONTINIUS MODE.
+          if (flag_F_modo_Continuo && flag_F_Node_Enable){
             flag_F_PAQUETE=false;
             flag_F_responder=true;
             timer_nodo_ST=true;
@@ -640,6 +645,7 @@ void loop(){
       }
     //-5.2 RFM95 RECIBIR.
       RFM95_recibir(LoRa.parsePacket());
+  }
 }
 //1. Funciones de Logic interna del Micro.
   void welcome(){
@@ -917,12 +923,12 @@ void loop(){
           }
           s1(incoming_nodo_info,x2);
         }
-        // if (funtion_Mode=="S" && funtion_Number=="2"){
-        //   if(flag_F_depurar){
-        //     Serial.println("funion S N2");
-        //   }
-        //   s2(x1);
-        // }
+        if (funtion_Mode=="S" && funtion_Number=="2"){
+          if(flag_F_depurar){
+            Serial.println("funion S N2");
+          }
+          s2(x1);
+        }
   }
 //3. Funciones para Ejecutar.
   //-3.1 Funciones tipo A.
@@ -997,15 +1003,26 @@ void loop(){
     void a5_Nodo_Modo_Continuo(int tipo_Modo){      
       int a=tipo_Modo;
       if(a==1){
-        beforeTime_1 = millis();
         flag_F_modo_Continuo=true;
-        temporizador_1.attach_ms(500, ISR_temporizador_1);
-        flag_F_PAQUETE=true;
+        if(flag_F_Node_Enable){
+          beforeTime_1 = millis();  // despurar.
+          temporizador_1.attach_ms(1500, ISR_temporizador_1);
+          flag_F_PAQUETE=true;
+        }
+        if(flag_F_Master_Enable){
+          temporizador_1.detach();
+        }
       }
       if(a==0){
         flag_F_modo_Continuo=false;
         flag_F_responder=false;
-        temporizador_1.detach();
+
+        if(flag_F_Node_Enable){
+          temporizador_1.detach();
+        }
+        if(flag_F_Master_Enable){
+          temporizador_1.attach_ms(masterTime, ISR_temporizador_1);
+        }
       }
     }
     void a6_Nodo_Numeros(int parametro_1){
@@ -1238,8 +1255,14 @@ void loop(){
           destination=0XFF;                           // Respondo aL maestro.
           codigo="S1";
           codigo+=nodo_Status;
+          
       }
-    // n2-  Nodo Responde a 
+    // n2-  Nodo Responde al Master modo Continuo.
+     void n2(){
+          // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+          destination=0XFF;                           // Respondo aL maestro.
+          codigo="S2";
+      }
     // n3-  Nodo Responde a 
   //-3.5 Funciones tipo S.
     void s1(byte data_in_1, int data_in_2){
@@ -1275,6 +1298,38 @@ void loop(){
           break;
         default:
           break;
+      }
+
+    }
+    void s2(byte data_in_1){
+      byte Dato_Nuevo_1 = data_in_1;   // Estado del nodo
+      switch(incoming_sender){
+        case 1:
+          Node1.CONTINIUS(Dato_Nuevo_1);
+          break;
+        
+        case 2:
+          Node2.CONTINIUS(Dato_Nuevo_1);
+          break;
+        case 3:
+          Node3.CONTINIUS(Dato_Nuevo_1);
+          break;
+        case 4:
+          Node4.CONTINIUS(Dato_Nuevo_1);
+          break;
+        case 5:
+          Node5.CONTINIUS(Dato_Nuevo_1);
+          break;
+        case 6:
+          Node6.CONTINIUS(Dato_Nuevo_1);
+          break;
+        case 7:
+          Node7.CONTINIUS(Dato_Nuevo_1);
+          break;
+
+        default:
+          break;
+
       }
     }
   //-3.6 Funciones Tipo M.
@@ -1400,9 +1455,8 @@ void loop(){
             // temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
             // flag_F_T2_run=true;
           } 
-        //1.7 Modo NODO >> BROADCAST CONTINUO (Prueba).
-          if(flag_F_modo_Continuo               && flag_ISR_temporizador_1){
-              // n1();
+        //1.7 Modo NODO >> CONTINUO (Prueba).
+          if(flag_F_Node_Enable && flag_F_modo_Continuo){
           }
         //1.8 Modo NODO Inicio Automatico
           if(Nodo_waiting && !flag_F_Nodo_Iniciado && localAddress < master && MODE==INDEPENDIENTE){
@@ -1433,6 +1487,10 @@ void loop(){
             temporizador_1.attach_ms(masterTime, ISR_temporizador_1); // CADA VEZ QUE ME LLEGA UN MENSAJE DEL NODO ANTERIOR CONFIGURO EL CYCLE TIME PARA ESTAR SINCRONIZADO
             flag_F_Master_Esperando=false;       // DESPUES QUE EL MAESTRO RECIBE EL MENSAJE DEL NODO ACTUALIYA LA BANDERA mMASTER ESPERA A FALSE
             // flag_F_T2_run=true;
+          }
+        //-2.4 Modo MASTER Recepciona del NODO en CONTINUO MODE.
+          if(incoming_recipient==master             && flag_F_modo_Continuo){
+
           }
     }
   //-4.3 Sever Update.  
@@ -1581,13 +1639,15 @@ void loop(){
           
         // LIMPIO PANTALLA
           Heltec.display->clear();
-        //0 NODO INFORMACION
-          Heltec.display->drawString(0, 0, Nodo_Name);
-          Heltec.display->drawString(50, 0, String(localAddress, DEC));
-          Heltec.display->drawString(70, 0, "RX:");
-          Heltec.display->drawString(87, 0, String(incoming_sender, DEC));
+        //0 DIRECCION INFORMACION
+          // DIRECCION
+            Heltec.display->drawString(0, 0, Nodo_Name);
+            Heltec.display->drawString(50, 0, String(localAddress, DEC));
+          // RECEPCION:
+            Heltec.display->drawString(70, 0, "RX:");
+            Heltec.display->drawString(87, 0, String(incoming_sender, DEC));
           // CODIGO DE MENSAJE
-          Heltec.display->drawString(107, 0, incoming_function);
+            Heltec.display->drawString(107, 0, incoming_function);
         //1 ZONAS MENSAJE ENTRANTE
           Heltec.display->drawString(0, 10, "ZONAS:");
           Heltec.display->drawString(50, 10, "87654321");
@@ -1698,7 +1758,6 @@ void loop(){
              if(zona_2==Zonas_Falla_Time){
                zona_2=0;
                zona_2_err=true;
-               Serial.println(zona_2_err);
              }
           }
           if(zona_2_err==true){
@@ -1790,7 +1849,7 @@ void loop(){
       }
       if (incoming_length != incoming_function.length()) {   // check length for error
         Serial.println("error: message length does not match length");
-        return;                             // skip rest of function
+        // return;                             // skip rest of function
       }
       elapseTime_GAP=currentTime_GAP-beforeTime_GAP;
       beforeTime_GAP=millis();
@@ -1802,18 +1861,18 @@ void loop(){
         if(flag_F_depurar){
           Serial.println("This message is not for me.");
         }
-        return;                             // skip rest of function
+        // return;                             // skip rest of function
       }
       // if message is for this device, or broadcast, print details:
       if(flag_F_depurar){
         Serial.println("Received from: 0x" + String(incoming_sender, HEX));
         Serial.println("Sent to: 0x" + String(incoming_recipient, HEX));
-        Serial.println("Message ID1: " + String(incoming_zonesLSB));
-        Serial.println("Message ID2: " + String(incoming_zonesMSB));
+        // Serial.println("Message ID1: " + String(incoming_zonesLSB));
+        // Serial.println("Message ID2: " + String(incoming_zonesMSB));
         Serial.println("Message length: " + String(incoming_length));
         Serial.println("Message: " + incoming_function);
-        Serial.println("RSSI: " + String(LoRa.packetRssi()));
-        Serial.println("Snr: " + String(LoRa.packetSnr()));
+        // Serial.println("RSSI: " + String(LoRa.packetRssi()));
+        // Serial.println("Snr: " + String(LoRa.packetSnr()));
         Serial.println();
       }
       
@@ -1876,15 +1935,15 @@ void loop(){
         Nodos_LSB_ACK=0;
         nodos_LSB_MERGE=0;
         nodo_Status="";
-        Serial.println(nodo_local, BIN);
-        Serial.println(codigo);
+        // Serial.println(nodo_local, BIN);
+        // Serial.println(codigo);
       }
 
       // DEBUG
       if(flag_F_depurar){
-        Serial.println(".");
-        Serial.println("Sent to: 0x" + String(destination, HEX));
       }
+      Serial.println(".");
+      Serial.println("para: " + String(destination, HEX));
       codigo="";
     }
 

@@ -18,6 +18,7 @@ class Node{
         void Coming (char nodeCode);
         void Update(byte Nodo_Source_1, int Nodo_Source_2);
         void Estado();
+        void CONTINIUS(byte data_in);
         
         int Zone_A_Num;
         int Zone_B_Num;
@@ -73,6 +74,10 @@ class Node{
         String Fuente_str;
         int Timero;
 
+        byte MSG_NUM;
+
         String Actual;
+
+        bool MODE_CONTINIUS;
 };
 #endif   // fin de la definicion.

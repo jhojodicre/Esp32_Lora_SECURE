@@ -42,15 +42,14 @@ void Node::Coming(char nodeCode){
 }
 void Node::Update(byte dato_actual_1, int dato_actual_2){
     byte dato_recibido = dato_actual_1;
-    // bit 0=ZX
+    MODE_CONTINIUS = false;
+    // bit 0= 
         if(bitRead(dato_recibido,0))
         {
-            // Zone_A_ALR=true;
-            // Zone_A_ST_str=ZONA_ACT;
-        }
-        else{
-            // Zone_A_ALR=false;
-            // Zone_A_ST_str=ZONA_DES;
+        //     
+        // }
+        // else{
+        //     
         }
     // ZA 
         // FALLA
@@ -118,6 +117,15 @@ void Node::Update(byte dato_actual_1, int dato_actual_2){
         // }
 }
 void Node::Estado(){
-    Serial.println("SEC,"+Zone_A_ST_str+","+Node_Number+",A"+","+Node_Source_Mode_str);
-    Serial.println("SEC,"+Zone_B_ST_str+","+Node_Number+",B"+","+Node_Source_Mode_str);
+    if(MODE_CONTINIUS){
+        Serial.println("SEC,"+Node_Number+MSG_NUM);
+    }
+    else{
+        Serial.println("SEC,"+Zone_A_ST_str+","+Node_Number+",A"+","+Node_Source_Mode_str);
+        Serial.println("SEC,"+Zone_B_ST_str+","+Node_Number+",B"+","+Node_Source_Mode_str);
+    }
+}
+void Node::CONTINIUS(byte data_in){
+    MODE_CONTINIUS = true;
+    MSG_NUM = data_in;
 }
