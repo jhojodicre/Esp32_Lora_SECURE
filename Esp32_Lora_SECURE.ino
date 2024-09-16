@@ -297,6 +297,7 @@
     // EEPROM
       byte          Node_eeprom_address = 0;
       byte          EEPROM_ADDRESS_EN   = 1;
+      bool          EEPROM_REWRITE_ENABLE;
     // Otras.  
       String      codigo="";
       String      info_1="";
@@ -399,12 +400,15 @@ void setup(){
       // pinMode(in_13, INPUT);      
       
   //2. Condiciones Iniciales.
+    //-2.0 Configuracion Inicial-
+      EEPROM.begin(EEPROM_SIZE);
     //-2.1 Estado de Salidas.
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0x02;
-      Nodos           = 2;
+      EEPROM_REWRITE_ENABLE=true;
+      localAddress    = 0x03;
+      Nodos           = 4;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
       Nodo_ultimo     = Nodos;
@@ -490,15 +494,15 @@ void setup(){
 
       //interrupts ();
     //-3.3 EEPROM
-      EEPROM.begin(EEPROM_SIZE);
-      if(EEPROM.read(EEPROM_ADDRESS_EN)==10){
-        localAddress=EEPROM.read(Node_eeprom_address);
-        Serial.println("eeprom");
-      } 
-      else{
-        localAddress=Node_local_Address;
-        Serial.println("nO eeprom");
-      }
+      
+      // if(EEPROM.read(EEPROM_ADDRESS_EN)==10){
+      //   localAddress=EEPROM.read(Node_eeprom_address);
+      //   Serial.println("eeprom");
+      // } 
+      // else{
+      //   localAddress=Node_local_Address;
+      //   Serial.println("nO eeprom");
+      // }
   //4. Prueba de Sitema Minimo Configurado.
     if(flag_F_depurar){
       Serial.println("Sistema Minimo Configurado");
@@ -697,10 +701,11 @@ void loop(){
     }
   }
   void ejecutar_solicitud(){
-    x1=funtion_Parmeter1.toInt();
-    x2=funtion_Parmeter2.toInt();
-    x3=funtion_Parmeter3.toInt();
-    x4=funtion_Parmeter4.toInt();
+    //
+      x1=funtion_Parmeter1.toInt();
+      x2=funtion_Parmeter2.toInt();
+      x3=funtion_Parmeter3.toInt();
+      x4=funtion_Parmeter4.toInt();
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
         if(flag_F_depurar){
@@ -955,12 +960,12 @@ void loop(){
       if(flag_F_depurar){
         Serial.println("Ejecutando F3.. \n");
       }
-      EEPROM.write(Node_eeprom_address,paramatro_1);
-      EEPROM.write(EEPROM_ADDRESS_EN,10);
-      EEPROM.commit();
+      // EEPROM.write(Node_eeprom_address,paramatro_1);
+      // EEPROM.write(EEPROM_ADDRESS_EN,10);
+      // EEPROM.commit();
       // EEPROM.write(Node_eeprom_address,paramatro_1);
       // EEPROM.write();
-      localAddress    = EEPROM.read(Node_eeprom_address);
+      // localAddress    = EEPROM.read(Node_eeprom_address);
       Nodo_actual     = localAddress;
       Nodo_siguiente  = localAddress + 1;
       Nodo_anterior   = localAddress - 1;
@@ -1255,7 +1260,7 @@ void loop(){
         destination=0xFF;                           // Respondo aL maestro.
         codigo="S1";
         // codigo+=nodo_Status;
-        codigo+="exito";
+        codigo+="exito"+localAddress;
       }
     // n2-  Nodo Responde al Master modo Continuo.
      void n2(){
@@ -1471,7 +1476,7 @@ void loop(){
             // beforeTime_2 = millis();  // despurar.
             // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
             temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-            temporizador_1.attach_ms(cycleTime, ISR_temporizador_1);
+            temporizador_1.attach_ms(masterTimeTime, ISR_temporizador_1);
             flag_F_T2_run=true;
             flag_F_T1_run=true;
           }
@@ -1875,6 +1880,11 @@ void loop(){
         // Serial.println("Snr: " + String(LoRa.packetSnr()));
         Serial.println();
       }
+        Serial.println("RX Desde: 0x" + String(incoming_sender, HEX));
+        Serial.println("RX para: 0x" + String(incoming_recipient, HEX));
+        Serial.println("Rx length: " + String(incoming_length));
+        Serial.println("Rx Message: " + incoming_function);
+        Serial.println();
       
       inputString=incoming_function;
       falg_ISR_stringComplete=true;
@@ -1890,14 +1900,9 @@ void loop(){
   //-5.2 RFM95 ENVIAR.
     void RFM95_enviar(String outgoing){
       LoRa.beginPacket();             // start packet
-
       //.........................................
-      LoRa.write(0x02);        // add destination address
-      LoRa.write(0xFF);       // add incoming_sender address
-      //..........................................
-      //.........................................
-      // LoRa.write(destination);        // add destination address
-      // LoRa.write(localAddress);       // add incoming_sender address
+      LoRa.write(destination);        // add destination address
+      LoRa.write(localAddress);       // add incoming_sender address
       //..........................................
       // LoRa.write(zonesLSB);           // add message ID
       // LoRa.write(zonesMSB);           // add message ID
@@ -1961,7 +1966,7 @@ void loop(){
       codigo="";
     }
 
-
-  //https://resource.heltec.cn/download/package_heltec_esp32_index.json
-  // TODO:
-  //REALIZAR UN SISTEMA DE CONTROL DE VERSIONES TANTO DE HARDWARE COMO DE SOFTWARE
+ // TODO:
+    //https://resource.heltec.cn/download/package_heltec_esp32_index.json
+   
+    //REALIZAR UN SISTEMA DE CONTROL DE VERSIONES TANTO DE HARDWARE COMO DE SOFTWARE
