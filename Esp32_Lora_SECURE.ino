@@ -403,7 +403,7 @@ void setup(){
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
-      localAddress    = 0xFF;
+      localAddress    = 0x02;
       Nodos           = 2;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
@@ -574,7 +574,7 @@ void loop(){
             flag_F_responder=true;
             flag_F_Master_Esperando=true; // Master indica que queda esperando un mensaje
             if(flag_F_depurar){
-              Serial.println("f.t1-EN");
+              // Serial.println("f.t1-EN");
             }
           }
         //NODE MODE.
@@ -688,12 +688,12 @@ void loop(){
     funtion_Parmeter4=inputString.substring(5,6);
 
     if(flag_F_depurar){
-      Serial.println(inputString);         // Pureba de Comunicacion Serial.
-      Serial.println("funcion: " + funtion_Mode);
-      Serial.println("Numero: " + funtion_Number);
-      Serial.println("Parametro1: " + funtion_Parmeter1);
-      Serial.println("Parametro2: " + funtion_Parmeter2);
-      Serial.println("Parametro3: " + funtion_Parmeter3+ "\n");
+      Serial.println("run: " + inputString);         // Pureba de Comunicacion Serial.
+      Serial.println("fun: " + funtion_Mode);
+      Serial.println("Num: " + funtion_Number);
+      Serial.println("Parm: " + funtion_Parmeter1 + "\n"+ "\n");
+      // Serial.println("Parametro2: " + funtion_Parmeter2);
+      // Serial.println("Parametro3: " + funtion_Parmeter3+ "\n");
     }
   }
   void ejecutar_solicitud(){
@@ -704,7 +704,7 @@ void loop(){
     // Function Tipo A
       if (funtion_Mode=="A" && funtion_Number=="1"){
         if(flag_F_depurar){
-          Serial.println("funion A N?�001");
+          // Serial.println("funion A N?�001");
         }  
         a1_Nodo_Destellos(x1,x2);
       }
@@ -1251,17 +1251,17 @@ void loop(){
   //-3.4 Funciones tipo N.
     // n1-  Nodo Responde al MASTER. 
       void n1(){
-          // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-          destination=0XFF;                           // Respondo aL maestro.
-          codigo="S1";
-          codigo+=nodo_Status;
-          
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=0xFF;                           // Respondo aL maestro.
+        codigo="S1";
+        // codigo+=nodo_Status;
+        codigo+="exito";
       }
     // n2-  Nodo Responde al Master modo Continuo.
      void n2(){
-          // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
-          destination=0XFF;                           // Respondo aL maestro.
-          codigo="S2";
+        // Si el mensaje viene del Maestro, preparar el mesaje para flag_F_responder al Maestro
+        destination=0xFF;                           // Respondo aL maestro.
+        codigo="S2";
       }
     // n3-  Nodo Responde a 
   //-3.5 Funciones tipo S.
@@ -1782,7 +1782,7 @@ void loop(){
         ++ nodo_proximo;
       }
       if(flag_F_depurar){
-        Serial.println("Node Next:"+nodo_proximo);
+        // Serial.println("Node Next:"+nodo_proximo);
       }
     }
   //-4.7 NODO CAIDO.
@@ -1865,11 +1865,11 @@ void loop(){
       }
       // if message is for this device, or broadcast, print details:
       if(flag_F_depurar){
-        Serial.println("Received from: 0x" + String(incoming_sender, HEX));
-        Serial.println("Sent to: 0x" + String(incoming_recipient, HEX));
+        Serial.println("RX Desde: 0x" + String(incoming_sender, HEX));
+        Serial.println("RX para: 0x" + String(incoming_recipient, HEX));
         // Serial.println("Message ID1: " + String(incoming_zonesLSB));
         // Serial.println("Message ID2: " + String(incoming_zonesMSB));
-        Serial.println("Message length: " + String(incoming_length));
+        Serial.println("length: " + String(incoming_length));
         Serial.println("Message: " + incoming_function);
         // Serial.println("RSSI: " + String(LoRa.packetRssi()));
         // Serial.println("Snr: " + String(LoRa.packetSnr()));
@@ -1890,8 +1890,15 @@ void loop(){
   //-5.2 RFM95 ENVIAR.
     void RFM95_enviar(String outgoing){
       LoRa.beginPacket();             // start packet
-      LoRa.write(destination);        // add destination address
-      LoRa.write(localAddress);       // add incoming_sender address
+
+      //.........................................
+      LoRa.write(0x02);        // add destination address
+      LoRa.write(0xFF);       // add incoming_sender address
+      //..........................................
+      //.........................................
+      // LoRa.write(destination);        // add destination address
+      // LoRa.write(localAddress);       // add incoming_sender address
+      //..........................................
       // LoRa.write(zonesLSB);           // add message ID
       // LoRa.write(zonesMSB);           // add message ID
       // LoRa.write(nodosLSB);
@@ -1944,10 +1951,17 @@ void loop(){
       }
       Serial.println(".");
       Serial.println("para: " + String(destination, HEX));
+      Serial.println("DE: " + String(localAddress, HEX));
+      Serial.print("long: ");  // add payload length
+      Serial.println(outgoing.length());  // add payload length
+      Serial.print("msg: ");  
+      Serial.println(outgoing); 
+      Serial.println("fin..........");
+      Serial.println(" ");
       codigo="";
     }
 
 
-//https://resource.heltec.cn/download/package_heltec_esp32_index.json
-// TODO:
-//REALIZAR UN SISTEMA DE CONTROL DE VERSIONES TANTO DE HARDWARE COMO DE SOFTWARE
+  //https://resource.heltec.cn/download/package_heltec_esp32_index.json
+  // TODO:
+  //REALIZAR UN SISTEMA DE CONTROL DE VERSIONES TANTO DE HARDWARE COMO DE SOFTWARE
