@@ -407,8 +407,8 @@ void setup(){
       digitalWrite(out_rele_2, LOW);
     //-2.2 Valores y Espacios de Variables.
       EEPROM_REWRITE_ENABLE=true;
-      localAddress    = 0x03;
-      Nodos           = 4;
+      localAddress    = 0xFF;
+      Nodos           = 1;
       Nodo_primero    = 1;
       // Nodo_ultimo     = 3;
       Nodo_ultimo     = Nodos;
@@ -1476,7 +1476,7 @@ void loop(){
             // beforeTime_2 = millis();  // despurar.
             // temporizador_0.attach_ms(masterTime, ISR_temporizador_0);
             temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
-            temporizador_1.attach_ms(masterTimeTime, ISR_temporizador_1);
+            temporizador_1.attach_ms(masterTime, ISR_temporizador_1);
             flag_F_T2_run=true;
             flag_F_T1_run=true;
           }
