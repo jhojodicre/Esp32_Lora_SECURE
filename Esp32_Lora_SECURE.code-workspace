@@ -5,10 +5,8 @@
 		}
 	],
 	"settings": {
-
 		"workbench.sideBar.location": "right",
 		"editor.formatOnSave": true,
-		"[objective-cpp]": { },
-		
+		"[objective-cpp]": {},
 	}
 }
