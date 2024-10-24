@@ -241,7 +241,8 @@
       long        afterTime_2  = 0;
       long        beforeTime_2 = 0;
 
-      long        chismeTime = 1000;
+      long        nodeTime   = 500;
+      long        chismeTime;
       long        baseTime   = 1000;
       long        cycleTime = 1000;
       long        tokenTime  = 2000;
@@ -451,9 +452,10 @@ void setup(){
       // BANDERAS
         flag_F_depurar    = false;
     //-2.3 Timer Answer.
-      masterTime      = 1200;         // every masterTime the Master Request to the next Node if the current request wasn't answer.
-      tokenTime       = 1000;         // THE MASTER request every 900 miliscond, le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000 millsecond.
+      masterTime      = 1200;         // every masterTime that Master Request to the next Node if the current request wasn't answered.
+      tokenTime       = 1000;         // THE MASTER request every 1000 miliscond, le pregunta a cada esclavo, para pruebas ponemos 1 segundo igual a 1000 millsecond.
       startTime       = 2000;         // Its is the time that the Master request the first Time.
+      nodeTime        =  500;  // Cada Nodo va aresponder cada 500 milisecond, para darle tiempo a otros nodos si ellos tienen algo importante para comunicar.
       baseTime        = 400;
       fastTime        = 10;
       updateTime      = 400;
@@ -461,7 +463,7 @@ void setup(){
       cycleTime       = tokenTime*(Nodos+1);
       firstTime       = tokenTime*localAddress;     // El primer mensaje esta calculado en tiempo forma para cada nodo.
       wakeUpTime      = 30.0;         // Este temporizador es para rresponder despues que el nodo despierta despues de mucho tiempo sin encender y es el unico que esta activo.
-      chismeTime      = (10*Nodo_actual)+100;
+      chismeTime      = (10*Nodo_actual);
       // Timer 3 Responde despues de Reiniciar sin Recibir respuesta.
       if(localAddress<255){
         // temporizador_3.once(wakeUpTime, ISR_temporizador_3);
@@ -1450,7 +1452,7 @@ void loop(){
         //1.5 Modo Nodo >> Master.
           if(incoming_recipient==localAddress   && incoming_sender==master){
             n1();
-            temporizador_2.once_ms(fastTime, ISR_temporizador_2);
+            temporizador_2.once_ms(nodeTime, ISR_temporizador_2);
             flag_F_T2_run=true;
           }
         //1.6 Modo NODO >> PRINCIPAL.
@@ -1468,6 +1470,15 @@ void loop(){
             temporizador_1.attach(waitTime, ISR_temporizador_1);
             flag_F_T1_run=true;
             flag_F_Nodo_Iniciado=true;
+          }
+        //1.9 Modo NODO >> CHISME
+          if(incoming_recipient <> localAddress && incoming_sender==master){
+            temporizador_3.once_ms(chismeTime, ISR_temporizador_3 )
+          }
+        //1.10 Modo NODO >> MASTER DESPUES DEL CHISME
+          if(incoming_recipient == localAddress && incoming_sender<>master){
+            Flag_Chisme_Enable=true;
+            temporizador_2.once_ms(tokenTime, ISR_temporizador_2);
           }
       //2. _____________Modo MASTER__________________________
         //-2.1 Modo MASTER Principal (INICA LA TRANSMISION) Ejecutado desde M2.
