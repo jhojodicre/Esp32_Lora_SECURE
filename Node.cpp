@@ -42,16 +42,15 @@ void Node::Coming(char nodeCode){
 }
 void Node::Update(byte dato_actual_1, int dato_actual_2){
     byte dato_recibido = dato_actual_1;
-    MODE_CONTINIUS = false;
-    // bit 0= 
+    // bit 0= Modo Continuo.
         if(bitRead(dato_recibido,0))
         {
-        //     
-        // }
-        // else{
-        //     
+            MODE_CONTINIUS = true;
         }
-    // ZA 
+        else{
+            MODE_CONTINIUS = false;
+        }
+    // bit 1=ZA 
         // FALLA
             if(bitRead(dato_recibido, 1) && bitRead(dato_recibido, 2)){
                 Zone_A_FAL=true;
@@ -69,7 +68,7 @@ void Node::Update(byte dato_actual_1, int dato_actual_2){
             Zone_A_ALR=false;
             Zone_A_ST_str = ZONA_DES;
         }
-    // ZB 
+    // bit 3=ZB 
         // FALLA
             if(bitRead(dato_recibido,3)&& bitRead(dato_recibido, 4)){
                 Zone_B_FAL=true;
