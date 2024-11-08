@@ -5,6 +5,7 @@
     #include <heltec.h>
     #include <EEPROM.h>
     #include "Node.h"
+    #include "Master.h"
     // #include "images.h"
     
 //2. PINOUT Definicion de ENTRADAS Y SALIDAS.
@@ -329,7 +330,8 @@
     Node Node10(10);
     Node Node11(11);
     Node Node12(12);
-
+  //-4.2 Master
+    Master Master(12);
 //5. Funciones ISR.
   //-5.1 Serial Function.
     void serialEvent (){
@@ -414,7 +416,7 @@ void setup(){
     //-2.1 Estado de Salidas.
       digitalWrite(out_rele_1, LOW);
       digitalWrite(out_rele_2, LOW);
-    //-2.2 Valores y Espacios de Variables.
+    //-2.2 Parametros y Variables.
       EEPROM_REWRITE_ENABLE=true;
       localAddress    = 0xFF;
       Nodos           = 2;
@@ -452,11 +454,11 @@ void setup(){
         flag_F_Nodo_Ultimo=true;
         Nodo_siguiente=Nodo_primero;
       }
-      EEPROM.write(Node_eeprom_address,localAddress);
-      EEPROM.commit();
-      // EEPROM.write(Node_eeprom_address,paramatro_1);
-      // EEPROM.write();
-      localAddress    = EEPROM.read(Node_eeprom_address);
+      // EEPROM.write(Node_eeprom_address,localAddress);
+      // EEPROM.commit();
+      // // EEPROM.write(Node_eeprom_address,paramatro_1);
+      // // EEPROM.write();
+      // localAddress    = EEPROM.read(Node_eeprom_address);
       // BANDERAS
         flag_F_depurar    = false;
     //-2.3 Timer Answer.
@@ -538,10 +540,12 @@ void setup(){
 void loop(){
   //L.1 Inicializacion del Sistema
     while (flag_F_inicio){
+      flag_F_inicio=false;
       //-L.1.1 Test de Incio.
-        welcome(); 
+        Node0.welcome();
+        // welcome(); 
       //-L.1.2 Led_Minitor.       
-        led_Monitor(3);
+        Node0.a1_Nodo_Destellos(5,5);
       //-L.1.3 Se Inicia Timer 1 y timer 2
         if(flag_F_Master_Enable){
           nodo_proximo=Nodo_primero-1;  
@@ -594,7 +598,7 @@ void loop(){
             flag_F_responder=true;
             flag_F_Master_Esperando=true; // Master indica que queda esperando un mensaje
             if(flag_F_depurar){
-              // Serial.println("f.t1-EN");
+              Serial.println("f.t1-EN");
             }
           }
         //NODE MODE.
@@ -830,7 +834,7 @@ void loop(){
         ESP.restart();
       }
       if (funtion_Mode=="A" && funtion_Number=="0"){
-        // sIN PROGRAMAR.
+        a0();
       }
       if (funtion_Mode=="A" && funtion_Number=="A"){
         aa();
@@ -920,6 +924,10 @@ void loop(){
         incomingFuntion='3';  // anterior,ente tenia '1' no se porque
       }
     // Function tipo M.
+      // Maestro Deshabilitado
+      if(funtion_Mode=="M"  && funtion_Number=="0"){
+        m0(x1);
+      }
       // MAESTRO Envia a Un Nodo Para Ejecutar Una Funcion.
         if (funtion_Mode=="M" && funtion_Number=="1"){
           if(flag_F_depurar){
@@ -959,8 +967,11 @@ void loop(){
           s2(x1);
         }
   }
-//F.3. Funciones para Ejecutar.
+//F.3. Funciones para Ejecutar.}Ñ,,
   //-3.1 Funciones tipo A.
+    void a0(){
+      Node1.A01();
+    }
     void a1_Nodo_Destellos (int repeticiones, int tiempo){
       // FUNCION PROBADA CORRECTAMENTE
       int veces=repeticiones;
@@ -1365,6 +1376,16 @@ void loop(){
       }
     }
   //-3.6 Funciones Tipo M.
+    void m0(int a){
+
+      if(a==1){
+        temporizador_1.detach();
+      }
+      if(a==0){
+        temporizador_1.attach_ms(outTime, ISR_temporizador_1);
+      }
+
+    }
     void m1(int nodo_num_request, String request_kind){
       Serial.print("Function Code: ");
       Serial.println(request_kind);
@@ -2015,7 +2036,7 @@ void loop(){
       }
     }
 
- // TODO:
+// TODO:
     //https://resource.heltec.cn/download/package_heltec_esp32_index.json
    
     //REALIZAR UN SISTEMA DE CONTROL DE VERSIONES TANTO DE HARDWARE COMO DE SOFTWARE

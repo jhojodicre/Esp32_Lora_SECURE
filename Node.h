@@ -1,5 +1,5 @@
-#ifndef NODE_H  // si no esta definida la libreria la defino
-#define NODE_H  // la defino
+#ifndef NODE_H  // si no esta definida la libreria
+#define NODE_H  // la definimos
 #include <Arduino.h>
 
 class Node{
@@ -9,7 +9,8 @@ class Node{
         bool zoneB=0;
         int nodeACK=0;             // Numero de Veces que el nodo a Sido Reconocido por el Maestro.
         bool Zone_Check;
-
+        byte _led;
+        byte _rele1;
 
     public:
         Node(int nodo_numero);
@@ -19,7 +20,9 @@ class Node{
         void Update(byte Nodo_Source_1, int Nodo_Source_2);
         void Estado();
         void CONTINIUS(byte data_in);
-        
+        void A01();
+        void welcome();
+        void a1_Nodo_Destellos(int a, int b);
         int Zone_A_Num;
         int Zone_B_Num;
 

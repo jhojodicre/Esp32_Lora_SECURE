@@ -1,8 +1,15 @@
 #include <Arduino.h>
+#include <heltec.h>
 #include "Node.h"
 
 Node::Node(int numero_nodo){
     Node_Number = numero_nodo;
+    _led = 21;
+    _rele1 = 12;
+
+    pinMode(_led, INPUT);
+
+    digitalWrite(_led, HIGH);
 }
 void Node::Ack(char functionCode){
     nodeACK ++;
@@ -127,4 +134,31 @@ void Node::Estado(){
 void Node::CONTINIUS(byte data_in){
     MODE_CONTINIUS = true;
     MSG_NUM = data_in;
+}
+void Node::A01(){
+    for(int encender = 0; encender<5; ++encender){
+        delay(1000);
+        digitalWrite(_led, HIGH);
+        delay(1000);
+        digitalWrite(_led, LOW);
+    }
+}
+void Node::welcome(){
+    Serial.println("SEC,MST,RST");
+    Heltec.display->drawString(0, 20, "SEGURIDAD");
+    Heltec.display->drawString(0, 30, "PERIMETRAL");
+    Heltec.display->drawString(0, 40, "SECURE");
+    Heltec.display->drawString(0, 50, "ALL");
+    Heltec.display->display();
+    delay(300);
+}
+void Node::a1_Nodo_Destellos (int repeticiones, int tiempo){
+        int retardo=tiempo*100;
+
+    for(int repetir=0; repetir<repeticiones; ++repetir){
+        delay(retardo);                  // pausa 1 seg.
+        digitalWrite(_led, HIGH);     // Led ON.
+        delay(retardo);                  // pausa 1 seg.
+        digitalWrite(_led, LOW);    // Led OFF.
+    }
 }
