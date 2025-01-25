@@ -49,7 +49,7 @@
     #define P8ZA          6
     #define P8ZB          7
 
-  //-2.4 Constantes.
+  // // //-2.4 Constantes.
     #define RFM95_FREQ    915E6  
     #define INDEPENDIENTE 1
     #define MASTER        2
@@ -541,11 +541,13 @@ void loop(){
   //L.1 Inicializacion del Sistema
     while (flag_F_inicio){
       flag_F_inicio=false;
+      //-L.1.0 Funcion de Inicio.
+        Node0.Iniciar();
       //-L.1.1 Test de Incio.
-        Node0.welcome();
+        // Node0.welcome();
         // welcome(); 
       //-L.1.2 Led_Minitor.       
-        Node0.a1_Nodo_Destellos(5,5);
+        // Node0.a1_Nodo_Destellos(5,5);
       //-L.1.3 Se Inicia Timer 1 y timer 2
         if(flag_F_Master_Enable){
           nodo_proximo=Nodo_primero-1;  
@@ -967,7 +969,7 @@ void loop(){
           s2(x1);
         }
   }
-//F.3. Funciones para Ejecutar.}Ñ,,
+//F.3. Funciones para Ejecutar.
   //-3.1 Funciones tipo A.
     void a0(){
       Node1.A01();

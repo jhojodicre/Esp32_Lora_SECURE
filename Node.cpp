@@ -27,6 +27,9 @@ void Node::Ack(char functionCode){
         default:
             break;
     }
+}void Node::Iniciar(){
+    welcome();
+    a1_Nodo_Destellos(10,4);
 }
 int Node::GetAckNum(){
     return nodeACK;

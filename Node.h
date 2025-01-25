@@ -11,8 +11,10 @@ class Node{
         bool Zone_Check;
         byte _led;
         byte _rele1;
+        
 
     public:
+        // Funciones
         Node(int nodo_numero);
         void Ack(char functionCode);
         int GetAckNum();
@@ -23,6 +25,11 @@ class Node{
         void A01();
         void welcome();
         void a1_Nodo_Destellos(int a, int b);
+        void Iniciar();
+
+        //Varibales
+        
+
         int Zone_A_Num;
         int Zone_B_Num;
 
