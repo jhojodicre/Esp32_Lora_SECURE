@@ -25,19 +25,31 @@ class Node{
         void A01();
         void welcome();
         void a1_Nodo_Destellos(int a, int b);
-        void Iniciar();
-
+        void revisar();
         //Varibales
-        
+        bool Zone_A_in;
+        bool Zone_B_in;
+        bool PB_ZA_in;
+        bool PB_ZB_in;
+        bool PB_ZC_in;
+        bool Fuente_in;
+        bool Entrada_X1_in;
+        bool in_12;
+        bool in_13;
 
+        byte nodo_local;
+        byte nodo_Status;
         int Zone_A_Num;
         int Zone_B_Num;
+        int Zonas;
+        int Zonas_Fallan;
 
         bool Zone_A;
         bool Zone_B;
 
         bool Zone_A_ACK;
         bool Zone_B_ACK;
+        bool Zone_AB_ACK;
 
         bool Zone_A_ERR;
         bool Zone_B_ERR;
@@ -53,7 +65,25 @@ class Node{
 
         String Zone_A_ST_str;
         String Zone_B_ST_str;
+        byte Zonas_MSB;
+        byte Zonas_LSB;
+        byte Zonas_LSB_Estados;
+        byte Zonas_MSB_Estados;
+        byte Zonas_LSB_Mascara;
+        byte Zonas_MSB_Mascara;
+        word Zonas_Mascaras;
+        int Zonas_LSB_str;
+        int Zonas_MSB_str;
 
+
+        String Zone_A_ACK_str;
+        String Zone_B_ACK_str;
+
+        bool Zone_A_ST;
+        bool Zone_B_ST;
+
+        bool Zones_Enables;
+        
         String Node_Source_Mode_str;
         
         bool Timer_ON;
@@ -68,7 +98,7 @@ class Node{
         String  ZONA_DES ="BOK";
         String  ZONA_FA  ="ERR";
 
-
+        String  Fuente_in_str;
         String  FUENTE_EN = "0";
         String  BATERIA_EN= "1";
 

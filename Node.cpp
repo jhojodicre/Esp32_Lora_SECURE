@@ -8,6 +8,15 @@ Node::Node(int numero_nodo){
     _rele1 = 12;
 
     pinMode(_led, INPUT);
+    pinMode(Zone_A_in, INPUT);
+    pinMode(Zone_B_in, INPUT);
+    pinMode(PB_ZA_in, INPUT);
+    pinMode(PB_ZB_in, INPUT);
+    pinMode(PB_ZC_in, INPUT);
+    pinMode(Fuente_in, INPUT);
+    pinMode(Entrada_X1_in, INPUT);
+    pinMode(in_12, INPUT);
+    pinMode(in_13, INPUT);
 
     digitalWrite(_led, HIGH);
 }
@@ -27,9 +36,6 @@ void Node::Ack(char functionCode){
         default:
             break;
     }
-}void Node::Iniciar(){
-    welcome();
-    a1_Nodo_Destellos(10,4);
 }
 int Node::GetAckNum(){
     return nodeACK;
@@ -146,14 +152,71 @@ void Node::A01(){
         digitalWrite(_led, LOW);
     }
 }
-void Node::welcome(){
-    Serial.println("SEC,MST,RST");
-    Heltec.display->drawString(0, 20, "SEGURIDAD");
-    Heltec.display->drawString(0, 30, "PERIMETRAL");
-    Heltec.display->drawString(0, 40, "SECURE");
-    Heltec.display->drawString(0, 50, "ALL");
-    Heltec.display->display();
-    delay(300);
+void Node::revisar(){
+      // 1. Pulsadores A y B Lectura.
+        Zone_A_ACK=digitalRead(PB_ZA_in);       // pulsador A. PB_ZA_in
+        Zone_B_ACK=digitalRead(PB_ZB_in);       // pulsador B.
+        Zone_AB_ACK=digitalRead(PB_ZC_in);      // pulsador C. Pulsador por defecto PRG.
+      // 2. Zona A y Zona B Lectura.
+        Zone_A=digitalRead(Zone_A_in);
+        Zone_B=digitalRead(Zone_B_in);
+      // 3. Bateria o Fuente Lectura.
+        Fuente=digitalRead(Fuente_in);
+
+      // 4. ZONAS A y B RESET.
+        // Pulsador C = reconocimiento de Ambas Zonas A y B. Reset de Ambas Zonas y Fallas.
+        if(!Zone_AB_ACK){
+          bitClear(Zonas, Zone_A);      // ZONA A Reset.
+          bitClear(Zonas, Zone_B);      // ZONA B Reset.
+
+          bitClear(Zonas_Fallan, Zone_A);     // ZONA A FALLA Reset.
+          bitClear(Zonas_Fallan, Zone_B);     // ZONA B FALLA Reset.
+
+          Zone_A_FAL_str='.';
+          Zone_B_FAL_str='.';
+
+          Zone_A_ERR=false;
+          Zone_B_ERR=false;
+        }
+      // 5. ZONA A RESET= Zona A aceptada desde el pulsador activo en bajo "0"
+        if(!Zone_A_ACK){
+          bitClear(Zonas, Zone_A);
+          bitClear(Zonas_Fallan, Zone_A);
+          Zone_A_ERR=false;
+          Zone_A_FAL_str='.';
+          Zone_A_ST=false;
+        }
+      // 6. ZONA B RESET= Zona B aceptada desde el pulsador activo en bajo "0"
+        if(!Zone_B_ACK){
+          bitClear(Zonas, Zone_B);
+          bitClear(Zonas_Fallan, Zone_B);
+          Zone_A_ERR=false;
+          Zone_B_FAL_str='.';        
+          Zone_B_ST=false;
+        }
+
+      // 7. ZONA A ACTIVA.
+        if(!Zone_A){
+          bitSet(Zonas, Zone_A);
+          Zone_A_ST=true;
+        }
+      // 8. ZONA B ACTIVA.
+          if(!Zone_B){
+            bitSet(Zonas, Zone_B);
+            Zone_B_ST=true;
+          }
+      // 9. ZONAS ACTIVAS.
+        if(Zonas>0){
+          Zones_Enables=true;
+        }
+      // 11 ZONAS para mostrar en Pantalla  OLED
+        Zone_A_ST_str=String(Zone_A_ST, BIN);
+        Zone_B_ST_str=String(Zone_B_ST, BIN);
+
+        Zone_A_ACK_str=String(!Zone_A_ACK, BIN);
+        Zone_B_ACK_str=String(!Zone_B_ACK, BIN);
+
+        Fuente_in_str=String(Fuente, BIN);        
 }
 void Node::a1_Nodo_Destellos (int repeticiones, int tiempo){
         int retardo=tiempo*100;

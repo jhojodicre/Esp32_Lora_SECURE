@@ -6,6 +6,8 @@
     #include <EEPROM.h>
     #include "Node.h"
     #include "Master.h"
+    #include "Funtions.h"
+    #include "General.h"
     // #include "images.h"
     
 //2. PINOUT Definicion de ENTRADAS Y SALIDAS.
@@ -114,7 +116,7 @@
     bool          flag_F_contar_tiempo=false;
     bool          flag_F_Master_Enable=false;       // Es Habilitado Solo cuando el esta en MODO Master
     bool          flag_F_Master_Esperando=true;        // Master espera esta activo cuando no recibe respuesta de ningun nodo. SE INICIALIZA EN VERDADERO
-
+    bool          on_off;
   
   //-3.3 Variables NODOS y ZONAS.
       // GENERALES
@@ -332,6 +334,11 @@
     Node Node12(12);
   //-4.2 Master
     Master Master(12);
+  //-4.3 Functions
+    Funtions  hacer(false);
+  //-4.4 General
+    General general(false);
+
 //5. Funciones ISR.
   //-5.1 Serial Function.
     void serialEvent (){
@@ -392,24 +399,7 @@
     }
 void setup(){
   //1. Configuracion de Puertos.
-    //1.1 Configuracion de Salidas:
-      // pinMode(in_36, OUTPUT);
-      pinMode(out_rele_1, OUTPUT);
-      pinMode(out_rele_2, OUTPUT);
-      pinMode(LED_azul, OUTPUT);
-    //1.2 Configuracion de Entradas
-      pinMode(Zona_A_in, INPUT);
-      pinMode(Zona_B_in, INPUT);
-
-      pinMode(PB_ZA_in, INPUT);
-      pinMode(PB_ZB_in, INPUT);
-      pinMode(PB_ZC_in, INPUT);
-
-      pinMode(Fuente_in, INPUT);
-
-      // pinMode(in_12, INPUT);
-      // pinMode(in_13, INPUT);      
-      
+    // general.configuracion();
   //2. Condiciones Iniciales.
     //-2.0 Configuracion Inicial-
       EEPROM.begin(EEPROM_SIZE);
@@ -540,9 +530,9 @@ void setup(){
 void loop(){
   //L.1 Inicializacion del Sistema
     while (flag_F_inicio){
-      flag_F_inicio=false;
+      // flag_F_inicio=hacer.iniciar();
       //-L.1.0 Funcion de Inicio.
-        Node0.Iniciar();
+        // Node0.Iniciar();
       //-L.1.1 Test de Incio.
         // Node0.welcome();
         // welcome(); 
@@ -570,12 +560,13 @@ void loop(){
     }
   //L.2 Decodificar funcion serial
     if(falg_ISR_stringComplete){
+      // hacer.Decodificar_Solicitud(inputString);
       decodificar_solicitud();
     }
   //L.3 Ejecutar Funcion
     if(flag_F_codified_funtion){
       ejecutar_solicitud();
-      flag_F_codified_funtion=false;
+      flag_F_codified_funtion=true;
       inputString="";
     }
   //L.4 Atender Las fucniones activadas desde ISR FLAGS.
